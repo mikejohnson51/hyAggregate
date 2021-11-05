@@ -5,6 +5,7 @@
 #' @param network_list  a list containing flowline and catchment `sf` objects
 #' @param min_area_sqkm The minimum allowable size of the output hydrofabric catchments
 #' @param min_length_km The minimum allowable length of the output hydrofabric flowlines
+#' @param term_cut cutoff integer to define terminal IDs
 #' @param condition How should headwaters be collapsed? Those where the area AND length are less then
 #' the prescribed thresholds, or where the area OR length are less then the thresholds
 #' (options are "and" or "or").
@@ -15,7 +16,7 @@
 #' @importFrom tidyr unnest_longer
 #' @importFrom nhdplusTools get_node
 
-collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_km = 1, condition = "or") {
+collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_km = 1, condition = "or", term_cut = 100000000) {
 
   n   = check_network_validity(fl = network_list$flowpaths, cat = network_list$catchments)
 
@@ -40,19 +41,17 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
 
     nfp = filter(fl, !.data$ID %in% candidates$ID)
 
-    cand = drop_artifical_splits(candidates)
-
-    emap = st_intersects(nhdplusTools::get_node(cand, "end"), fl)
-    smap = st_intersects(nhdplusTools::get_node(cand, "start"), fl)
+    emap = st_intersects(nhdplusTools::get_node(candidates, "end"), fl)
+    smap = st_intersects(nhdplusTools::get_node(candidates, "start"), fl)
 
     dfe = data.frame(
-      ID       = rep(cand$ID, times = lengths(emap)),
+      ID       = rep(candidates$ID, times = lengths(emap)),
       touches  = fl$ID[unlist(emap)],
       pos = "e" ) %>%
       filter(!.data$ID == .data$touches)
 
     dfs = data.frame(
-      ID       = rep(cand$ID, times = lengths(smap)),
+      ID       = rep(candidates$ID, times = lengths(smap)),
       touches  = fl$ID[unlist(smap)],
       pos = "s" ) %>%
       filter(!.data$ID == .data$touches)
@@ -67,12 +66,13 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
       summarise(connected = sum(.data$touches == .data$toID | .data$toID == 0),
                 correction = unique(.data$touches)) %>%
       left_join(select(st_drop_geometry(fl), correction = .data$ID, .data$Hydroseq), by = "correction") %>%
+      group_by(.data$ID) %>%
       filter(.data$connected < 1) %>%
       slice_min(.data$Hydroseq) %>%
       select(-.data$connected, -.data$Hydroseq) %>%
       ungroup()
 
-    d = left_join(cand, fix, by = "ID") %>%
+    d = left_join(candidates, fix, by = "ID") %>%
       st_drop_geometry()
 
     d$toID = ifelse(is.na(d$correction), d$toID, d$correction)
@@ -91,17 +91,16 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
       tidyr::unnest_longer(col = .data$oldIDs) %>%
       filter(!duplicated(.))
 
-    tmp = filter(index_map) %>%
+    tmp = index_map %>%
       filter(.data$newID != .data$oldIDs) %>%
       filter(.data$oldIDs %in%  .data$newID) %>%
       select(update = .data$newID, newID = .data$oldIDs)
 
-    index_map = left_join(index_map, tmp)
+    index_map = left_join(index_map, tmp, by = "newID")
     index_map$newID = ifelse(is.na(index_map$update), index_map$newID, index_map$update)
     index_map$update = NULL
 
-    im = index_map %>%
-      filter(!duplicated(.))
+    im =  filter(index_map, !duplicated(index_map))
 
     ccc = left_join(im, cat, by = c("oldIDs" = "ID")) %>%
       st_as_sf() %>%
@@ -111,9 +110,44 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
       select(ID = .data$newID) %>%
       bind_rows(filter(cat, !.data$ID %in% im$oldIDs))
 
-    check_network_validity(nfp, ccc)
+ ## TODO: look more closely at the example in the README and ID=125
+    find_and_remove_detached(fl  = nfp, cats = ccc, term_cut)
 
   } else {
-    check_network_validity(fl, cat)
+    find_and_remove_detached(fl, cat, term_cut)
+  }
+}
+
+
+#' On a rare occasion, the combination of HY_Refactor water
+#' flying can result in a flowpath that (A) does not have any inflows, (B) violates lengths/area assumptions,
+#' (C) is NOT a headwater. In these cases a segement within the network can get removed leaving isolated/detached flowpaths.
+#' This functions is a first, but probably not ideal, stab at cleaning these up.
+#' @param fl a flowline sf object
+#' @param cats a catchment sf object
+#' @param term_cut cutoff integer to define terminal IDs
+#' @return a validated network list
+#' @export
+#' @importFrom  sf st_intersects
+#' @importFrom dplyr filter select mutate bind_rows
+#' @importFrom hyRefactor union_polygons_geos
+
+find_and_remove_detached = function(fl, cats, term_cut){
+
+  fl$test = lengths(st_intersects(fl))
+
+  fix  = filter(fl, .data$test < 2)
+
+  if(nrow(fix) > 0){
+    fl = filter(fl, !.data$ID %in% fix$ID)
+
+    fix_cats = filter(cats, .data$ID %in% fix$ID) %>%
+      mutate(ID = fix$toID) %>%
+      bind_rows(filter(cats, !.data$ID %in% fix$ID)) %>%
+      hyRefactor::union_polygons_geos("ID")
+
+    check_network_validity(select(fl, -.data$test), fix_cats, term_cut)
+  } else {
+    check_network_validity(select(fl, -.data$test), cats, term_cut)
   }
 }

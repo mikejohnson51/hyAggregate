@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![Dependencies](https://img.shields.io/badge/dependencies-6/91-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
 [![R CMD
 Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License:
@@ -41,8 +41,10 @@ library(hyAggregate)
 library(dplyr)
 library(sf)
 
+# -- load some sample data -- #
 load(system.file("extdata", "gage_01013500.rda", package = "hyAggregate"))
 
+# -- Run the Aggregation -- #
 aggregated = aggregate_by_thresholds(fl = gage_01013500$flowpaths,
                                      catchments = gage_01013500$catchments,
                                      ideal_size = 10,
@@ -60,3 +62,17 @@ Equally we can ensure that our critieria was met by evaluating the
 catchment area and flowpath lengths across outputs:
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+
+## Nexus Locations
+
+``` r
+nex = get_nexus_locations(aggregated$flowpaths, term_cut = 1000000)
+
+{
+  plot(st_geometry(aggregated$catchments), border = "gray")
+  plot(st_geometry(gage_01013500$flowpaths), col = "blue", add = TRUE)
+  plot(st_geometry(nex), col = "red", pch = 16, cex = .5, add = TRUE)
+}
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />

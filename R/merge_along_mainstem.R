@@ -5,14 +5,17 @@
 #' @param ideal_size The ideal size of output hydrofabric catchments
 #' @param min_area_sqkm The minimum allowable size of the output hydrofabric catchments
 #' @param min_length_km The minimum allowable length of the output hydrofabric flowlines
+#' @param term_cut cutoff integer to define terminal IDs
 #' @return a list containing aggregated and validated flowline and catchment `sf` objects
 #' @export
 #' @importFrom dplyr filter group_by arrange mutate ungroup select cur_group_id select
 #' @importFrom sf st_drop_geometry
 
-merge_along_mainstem  <- function(network_list, ideal_size = 10, min_area_sqkm = 3, min_length_km = 1) {
+merge_along_mainstem  <- function(network_list, ideal_size = 10, min_area_sqkm = 3, min_length_km = 1, term_cut =  100000000) {
 
-  n = check_network_validity(fl = network_list$flowpaths, cat = network_list$catchments)
+  n = check_network_validity(fl = network_list$flowpaths,
+                             cat = network_list$catchments,
+                             term_cut)
 
   cat = n$catchments
   fl  = n$flowpaths

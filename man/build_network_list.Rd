@@ -7,7 +7,8 @@
 build_network_list(
   gpkg = NULL,
   fl_name = "refactored_flowpaths",
-  cat_name = "refactored_catchments"
+  cat_name = "refactored_catchments",
+  term_cut = 100000000
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ build_network_list(
 \item{fl_name}{The name of the refactored flowline layer in \code{gpkg}}
 
 \item{cat_name}{The name of the refactored catchment layer in \code{gpkg}}
+
+\item{term_cut}{cutoff integer to define terminal IDs}
 }
 \value{
 a list containing flowline and catchment \code{sf} objects

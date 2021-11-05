@@ -8,7 +8,8 @@ collapse_headwaters(
   network_list,
   min_area_sqkm = 3,
   min_length_km = 1,
-  condition = "or"
+  condition = "or",
+  term_cut = 100000000
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ collapse_headwaters(
 \item{condition}{How should headwaters be collapsed? Those where the area AND length are less then
 the prescribed thresholds, or where the area OR length are less then the thresholds
 (options are "and" or "or").}
+
+\item{term_cut}{cutoff integer to define terminal IDs}
 }
 \value{
 list of sf objects

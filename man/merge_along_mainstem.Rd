@@ -8,7 +8,8 @@ merge_along_mainstem(
   network_list,
   ideal_size = 10,
   min_area_sqkm = 3,
-  min_length_km = 1
+  min_length_km = 1,
+  term_cut = 100000000
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ merge_along_mainstem(
 \item{min_area_sqkm}{The minimum allowable size of the output hydrofabric catchments}
 
 \item{min_length_km}{The minimum allowable length of the output hydrofabric flowlines}
+
+\item{term_cut}{cutoff integer to define terminal IDs}
 }
 \value{
 a list containing aggregated and validated flowline and catchment \code{sf} objects

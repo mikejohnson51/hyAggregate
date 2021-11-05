@@ -10,6 +10,7 @@
 #' @param ideal_size The ideal size of output hydrofabric catchments
 #' @param min_area_sqkm The minimum allowable size of the output hydrofabric catchments
 #' @param min_length_km The minimum allowable length of the output hydrofabric flowlines
+#' @param term_cut cutoff integer to define terminal IDs
 #' @param condition How should headwaters be collapsed? Those where the area AND length are less then
 #' the prescribed thresholds, or where the area OR length are less then the thresholds
 #' (options are "and" or "or").
@@ -20,6 +21,7 @@
 #' \enumerate{
 #'   \item \code{\link{merge_along_mainstem}}
 #'   \item \code{\link{collapse_headwaters}}
+#'   \item \code{\link{realign_topology}}
 #' }
 #' @return list object
 #' @export
@@ -33,6 +35,7 @@ aggregate_by_thresholds = function(fl = NULL,
                                    ideal_size    = 10,
                                    min_area_sqkm = 3,
                                    min_length_km = 1,
+                                   term_cut = 100000000,
                                    condition = "or"){
 
 
@@ -40,13 +43,17 @@ aggregate_by_thresholds = function(fl = NULL,
     if(is.null(fl) | is.null(catchments)){
       stop("Must provide a gpkg OR both fl and cat argument")
     }
-    nl = check_network_validity(fl = fl, cat = catchments)
+    check_network_validity(fl = fl, cat = catchments, term_cut = term_cut)
   } else {
-    build_network_list(gpkg, fl_name = fl_name, cat_name = cat_name)
+    build_network_list(gpkg, fl_name = fl_name, cat_name = cat_name, term_cut = term_cut)
   }
 
-  merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km) %>%
-    collapse_headwaters(min_area_sqkm, min_length_km, condition)
+  merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut) %>%
+    collapse_headwaters(min_area_sqkm, min_length_km, condition, term_cut = term_cut) %>%
+    realign_topology(term_cut = term_cut)
+
+ # sf::write_sf(nl3$flowpaths, '/Users/mjohnson/Downloads/tmp2.gpkg', "fp")
+ # sf::write_sf(nl3$catchments, '/Users/mjohnson/Downloads/tmp2.gpkg', "cat")
 
 }
 
@@ -57,10 +64,11 @@ aggregate_by_thresholds = function(fl = NULL,
 #' @param gpkg A path to a geopackage with refactored output
 #' @param fl_name The name of the refactored flowline layer in `gpkg`
 #' @param cat_name The name of the refactored catchment layer in `gpkg`
+#' @param term_cut cutoff integer to define terminal IDs
 #' @return a list containing flowline and catchment `sf` objects
 #' @export
 #' @importFrom sf read_sf
 
-build_network_list = function(gpkg = NULL, fl_name = "refactored_flowpaths", cat_name = "refactored_catchments"){
-  check_network_validity(fl = read_sf(gpkg, fl_name), cat = read_sf(gpkg, cat_name))
+build_network_list = function(gpkg = NULL, fl_name = "refactored_flowpaths", cat_name = "refactored_catchments", term_cut = 100000000){
+  check_network_validity(fl = read_sf(gpkg, fl_name), cat = read_sf(gpkg, cat_name), term_cut = term_cut)
 }

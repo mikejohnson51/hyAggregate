@@ -5,12 +5,14 @@
 \title{Check Network Validity
 \strong{INTERNAL} function that validates a flowline and catchment network}
 \usage{
-check_network_validity(fl, cat)
+check_network_validity(fl, cat, term_cut = 100000000)
 }
 \arguments{
 \item{fl}{a LINESTRING \code{sf} flowlines object}
 
 \item{cat}{a POLYGON \code{sf} catchments object}
+
+\item{term_cut}{cutoff integer to define terminal IDs}
 }
 \value{
 a list containing flowline and catchment \code{sf} objects

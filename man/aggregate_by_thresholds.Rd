@@ -13,6 +13,7 @@ aggregate_by_thresholds(
   ideal_size = 10,
   min_area_sqkm = 3,
   min_length_km = 1,
+  term_cut = 100000000,
   condition = "or"
 )
 }
@@ -32,6 +33,8 @@ aggregate_by_thresholds(
 \item{min_area_sqkm}{The minimum allowable size of the output hydrofabric catchments}
 
 \item{min_length_km}{The minimum allowable length of the output hydrofabric flowlines}
+
+\item{term_cut}{cutoff integer to define terminal IDs}
 
 \item{condition}{How should headwaters be collapsed? Those where the area AND length are less then
 the prescribed thresholds, or where the area OR length are less then the thresholds
@@ -54,5 +57,6 @@ The following three functions are used in the \code{aggregate_by_thresholds} wor
 \enumerate{
 \item \code{\link{merge_along_mainstem}}
 \item \code{\link{collapse_headwaters}}
+\item \code{\link{realign_topology}}
 }
 }

@@ -19,20 +19,21 @@ network_is_dag = function(fl, ID = "ID", toID = "toID"){
 #' **INTERNAL** function that validates a flowline and catchment network
 #' @param fl a LINESTRING `sf` flowlines object
 #' @param cat a POLYGON `sf` catchments object
+#' @param term_cut cutoff integer to define terminal IDs
 #' @return a list containing flowline and catchment `sf` objects
 #' @export
 #' @importFrom hyRefactor add_areasqkm
 #' @importFrom dplyr mutate select left_join
 #' @importFrom sf st_drop_geometry
 
-check_network_validity     <- function(fl, cat){
+check_network_validity     <- function(fl, cat, term_cut = 100000000){
 
   fl  = fl[!duplicated(fl),]
   cat = cat[!duplicated(cat),]
 
   fl$toID    = ifelse(is.na(fl$toID), 0, fl$toID)
   DAG        = network_is_dag(fl)
-  CONNECTION = sum(!(fl$toID %in% fl$ID | fl$toID == 0)) == 0
+  CONNECTION = sum(!(fl$toID %in% fl$ID | fl$toID > term_cut | fl$toID == 0)) == 0
 
   if(all(DAG,  CONNECTION)){
 

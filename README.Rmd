@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # hyAggregate
 
 <!-- badges: start -->
-[![Dependencies](https://img.shields.io/badge/dependencies-6/91-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
 [![R CMD Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 [![LifeCycle](man/figures/lifecycle/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -43,8 +43,10 @@ library(hyAggregate)
 library(dplyr)
 library(sf)
 
+# -- load some sample data -- #
 load(system.file("extdata", "gage_01013500.rda", package = "hyAggregate"))
 
+# -- Run the Aggregation -- #
 aggregated = aggregate_by_thresholds(fl = gage_01013500$flowpaths,
                                      catchments = gage_01013500$catchments,
                                      ideal_size = 10,
@@ -55,12 +57,13 @@ aggregated = aggregate_by_thresholds(fl = gage_01013500$flowpaths,
 Here we can view a map of the modified flowpath and catchment network. Note that aggregating any network will result in lost resolution on the network when data conforms to the HY_Feature standand.
 
 ```{r, echo = FALSE}
-par(mfrow = c(1,2))
+{par(mfrow = c(1,2))
 plot(st_geometry(gage_01013500$catchments), border = "red")
 plot(st_geometry(aggregated$catchments), border = "blue", add = TRUE)
 
 plot(st_geometry(gage_01013500$flowpaths), col = "red")
 plot(st_geometry(aggregated$flowpaths), col = "blue", add= TRUE, lwd = 2)
+}
 ```
 
 Equally we can ensure that our critieria was met by evaluating the catchment area and flowpath lengths across outputs:
@@ -68,26 +71,39 @@ Equally we can ensure that our critieria was met by evaluating the catchment are
 ```{r, echo = FALSE}
 {par(mfrow = c(2,2))
 hist(gage_01013500$catchments$areasqkm, 
-     breaks = 100, main = "Refactored Catchment Areas",
+     breaks = 100, 
+     main = paste(nrow(gage_01013500$catchments), "Refactored Catchment Areas"),
      xlab = "SqKM")
 abline(v = 3, lwd = 4)
 abline(v = 10, lwd = 4)
 abline(v = 15, lwd = 4)
+
 hist(aggregated$catchments$areasqkm, 
-     breaks = 100, main = "Aggregated Catchment Areas",
+     breaks = 100, main = paste(nrow(aggregated$catchments), "Aggregated Catchment Areas"),
      xlab = "SqKM")
 abline(v = 3, lwd = 4)
 abline(v = 10, lwd = 4)
 abline(v = 15, lwd = 4)
 
 hist(gage_01013500$flowpaths$LENGTHKM, 
-     breaks = 100, main = "Refactored Flowpath Lengths",
+     breaks = 100, main = paste(nrow(gage_01013500$flowpaths), "Refactored Flowpath Lengths"),
      xlab = "KM")
 abline(v = 1, lwd = 4)
 hist(aggregated$flowpaths$lengthkm, 
-     breaks = 100, main = "Aggregated Flowpath Lengths",
+     breaks = 100, main = paste(nrow(aggregated$flowpaths), "Aggregated Flowpath Lengths"),
      xlab = "KM")
 abline(v = 1, lwd = 4)
 }
 ```
 
+## Nexus Locations
+
+```{r}
+nex = get_nexus_locations(aggregated$flowpaths, term_cut = 1000000)
+
+{
+  plot(st_geometry(aggregated$catchments), border = "gray")
+  plot(st_geometry(gage_01013500$flowpaths), col = "blue", add = TRUE)
+  plot(st_geometry(nex), col = "red", pch = 16, cex = .5, add = TRUE)
+}
+```
