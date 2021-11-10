@@ -58,7 +58,7 @@ network when data conforms to the HY_Feature standand.
 
 <img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
 
-Equally we can ensure that our critieria was met by evaluating the
+Equally we can ensure that our criteria was met by evaluating the
 catchment area and flowpath lengths across outputs:
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
