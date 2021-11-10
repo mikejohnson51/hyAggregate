@@ -19,7 +19,10 @@ Imports:
     hyRefactor,
     igraph,
     nhdplusTools,
+    raster,
+    RNetCDF,
     sf,
+    stats,
     tidyr,
     units
 Remotes: dblodgett-usgs/hyRefactor

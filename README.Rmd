@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # hyAggregate
 
 <!-- badges: start -->
-[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-9/89-orange?style=flat)](#)
 [![R CMD Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 [![LifeCycle](man/figures/lifecycle/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -68,7 +68,7 @@ Here we can view a map of the modified flowpath and catchment network. Note that
 
 Equally we can ensure that our criteria was met by evaluating the catchment area and flowpath lengths across outputs:
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, eval = FALSE}
 {par(mfrow = c(2,2))
 hist(gage_01013500$catchments$areasqkm, 
      breaks = 100, 
@@ -94,6 +94,42 @@ hist(aggregated$flowpaths$lengthkm,
      xlab = "KM")
 abline(v = 1, lwd = 4)
 }
+```
+
+
+```{r, echo = FALSE}
+library(ggplot2)
+library(patchwork)
+
+rfc_ln = ggplot(data = gage_01013500$flowpaths, aes(x = LENGTHKM)) +
+  geom_histogram(bins= 100, fill="#69b3a2", color="#e9ecef", alpha=0.9)+
+  geom_vline(xintercept = 1, lwd = 1) +
+  labs(x = "Length (KM)", title = paste0("Refactored Flowlines (",nrow(gage_01013500$flowpaths), ")"))
+
+agg_ln = ggplot(data = aggregated$flowpaths, aes(x = lengthkm)) +
+  geom_histogram(bins= 100, fill="#69b3a2", color="#e9ecef", alpha=0.9)+
+  geom_vline(xintercept = 1, lwd = 1) +
+  labs(x = "Length (KM)", title = paste0("Aggregated Flowlines (", nrow(aggregated$flowpaths), ")"))
+
+#####
+
+rfc_ar = ggplot(data = gage_01013500$catchments, aes(x = areasqkm)) +
+  geom_histogram(bins= 100, fill="#404080", color="#e9ecef", alpha=0.9)+
+  geom_vline(xintercept = 3, lwd = 1) +
+  geom_vline(xintercept = 10, lwd = 1) +
+  geom_vline(xintercept = 20, lwd = 1) +
+  xlim(0,30) +
+  labs(x = "Area (KM2)", title = paste0("Refactored Catchments (", nrow(gage_01013500$catchments), ")"))
+
+agg_ar = ggplot(data = aggregated$catchments, aes(x = areasqkm)) +
+  geom_histogram(bins= 100, fill="#404080", color="#e9ecef", alpha=0.9)+
+  geom_vline(xintercept = 3, lwd = 1) +
+  geom_vline(xintercept = 10, lwd = 1) +
+  geom_vline(xintercept = 20, lwd = 1) +
+  xlim(0,30) +
+  labs(x = "Area (KM2)", title = paste0("Aggregated Catchments (", nrow(aggregated$catchments), ")"))
+
+rfc_ln + agg_ln +  rfc_ar + agg_ar
 ```
 
 ## Nexus Locations

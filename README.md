@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-9/89-orange?style=flat)](#)
 [![R CMD
 Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License:
@@ -61,7 +61,11 @@ network when data conforms to the HY_Feature standand.
 Equally we can ensure that our criteria was met by evaluating the
 catchment area and flowpath lengths across outputs:
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+    #> Warning: Removed 2 rows containing missing values (geom_bar).
+
+    #> Warning: Removed 2 rows containing missing values (geom_bar).
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 ## Nexus Locations
 
@@ -75,4 +79,4 @@ nex = get_nexus_locations(aggregated$flowpaths, term_cut = 1000000)
 }
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />

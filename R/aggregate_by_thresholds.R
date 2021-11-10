@@ -53,7 +53,7 @@ aggregate_by_thresholds = function(fl = NULL,
 
   nl1 = merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut)
 
-  nl2 = collapse_headwaters(nl1, min_area_sqkm, min_length_km, condition, term_cut = term_cut)
+  nl2 = collapse_headwaters(network_list = nl1, min_area_sqkm, min_length_km, condition, term_cut = term_cut)
 
   nl3 = realign_topology(nl2, term_cut = term_cut)
 

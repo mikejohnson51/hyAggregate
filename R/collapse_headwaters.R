@@ -12,7 +12,7 @@
 #' @return list of sf objects
 #' @export
 #' @importFrom sf st_is_empty st_drop_geometry st_intersects
-#' @importFrom dplyr filter select group_by mutate ungroup select left_join slice_min summarise
+#' @importFrom dplyr filter select group_by mutate ungroup select left_join slice_min summarize anti_join
 #' @importFrom tidyr unnest_longer
 #' @importFrom nhdplusTools get_node
 
@@ -26,23 +26,75 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
 
   candidates =  filter(fl, !.data$ID %in% .data$toID)
 
-  end_nodes = fl %>%
-    nhdplusTools::rename_geometry("geometry") %>%
-    mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
-
-  candidates$inflows =  lengths(st_intersects(candidates, end_nodes)) > 1
-
   if (condition == "and") {
     candidates = candidates %>%
       filter(.data$lengthkm < min_length_km & .data$areasqkm < min_area_sqkm)  %>%
-      filter(!.data$inflows)  %>%
       select(.data$ID, .data$toID)
   } else {
     candidates = candidates %>%
       filter(.data$lengthkm < min_length_km | .data$areasqkm < min_area_sqkm)  %>%
-      filter(!.data$inflows)  %>%
       select(.data$ID, .data$toID)
   }
+
+  end_nodes = fl %>%
+    select(.data$ID, .data$toID) %>%
+    nhdplusTools::rename_geometry("geometry") %>%
+    mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
+
+  dmap = st_intersects(end_nodes, fl)
+
+  # Here we are finding all of the  which flowlines the endpoint touch and seeing if
+  # the toID is included. If it is not, then the flowline is disconnected from the
+  # graph network
+
+  disconnected = data.frame(
+    ID       = rep(end_nodes$ID, times = lengths(dmap)),
+    touches  = fl$ID[unlist(dmap)],
+    graph    = rep(end_nodes$toID, times = lengths(dmap))) %>%
+    filter(.data$ID != .data$touches) %>%
+    group_by(.data$ID) %>%
+    summarize(connected_to_toID = sum(.data$touches == .data$graph)) %>%
+    ungroup()
+
+  #######
+
+  # Here we find which flowlines each candidate line endpoint touches
+  emap = st_intersects(nhdplusTools::get_node(candidates, "end"), fl)
+
+  dfe = data.frame(
+    ID       = rep(candidates$ID, times = lengths(emap)),
+    touches  = fl$ID[unlist(emap)]) %>%
+    filter(!.data$ID == .data$touches)
+  # Here we find which flowlines each candidate line start point touches
+  smap = st_intersects(nhdplusTools::get_node(candidates, "start"), fl)
+
+  dfs = data.frame(
+    ID       = rep(candidates$ID, times = lengths(smap)),
+    touches  = fl$ID[unlist(smap)]) %>%
+    filter(!.data$ID == .data$touches)
+
+  # Combine them! This is a mapping file of all start/end point
+  # intersections
+  ends = bind_rows(dfe, dfs)
+
+  # Now, to identify inter-segment flows, we compute all flowlines that touch each candidate
+  all_map = st_intersects(candidates, fl)
+
+  dfa = data.frame(
+    ID       = rep(candidates$ID, times = lengths(all_map)),
+    touches  = fl$ID[unlist(all_map)]) %>%
+    filter(!.data$ID == .data$touches)
+
+  ### Anti-joining the end(s) map with the full map finds those segments with
+  ### Mid reach inflows
+  ### Joining that to the disconnected map, tells us which flowline have inflows that are disconnected!
+  ### lastly, we only keep those in which the disconnected inflow, is NOT also a candidtate to be aggregated
+
+  special_friends = anti_join(dfa, ends, by = c("ID", "touches")) %>%
+    left_join(disconnected, by = c("touches" = 'ID')) %>%
+    filter(!.data$touches %in% candidates$ID)
+
+  candidates = filter(candidates, !.data$ID %in% special_friends$ID)
 
   #####
 
@@ -55,14 +107,12 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
 
     dfe = data.frame(
       ID       = rep(candidates$ID, times = lengths(emap)),
-      touches  = fl$ID[unlist(emap)],
-      pos = "e" ) %>%
+      touches  = fl$ID[unlist(emap)]) %>%
       filter(!.data$ID == .data$touches)
 
     dfs = data.frame(
       ID       = rep(candidates$ID, times = lengths(smap)),
-      touches  = fl$ID[unlist(smap)],
-      pos = "s" ) %>%
+      touches  = fl$ID[unlist(smap)]) %>%
       filter(!.data$ID == .data$touches)
 
     int = bind_rows(dfs, dfe) %>%
