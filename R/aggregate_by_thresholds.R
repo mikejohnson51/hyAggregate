@@ -26,6 +26,9 @@
 #' @return list object
 #' @export
 #' @importFrom dplyr `%>%`
+#'
+
+# agg = hyAggregate::aggregate_by_thresholds(gpkg = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-refactor/01a/rf_s10000_m1000_c1000.gpkg')
 
 aggregate_by_thresholds = function(fl = NULL,
                                    catchments = NULL,
@@ -48,14 +51,16 @@ aggregate_by_thresholds = function(fl = NULL,
     build_network_list(gpkg, fl_name = fl_name, cat_name = cat_name, term_cut = term_cut)
   }
 
-  merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut) %>%
-    collapse_headwaters(min_area_sqkm, min_length_km, condition, term_cut = term_cut) %>%
-    realign_topology(term_cut = term_cut)
+  nl1 = merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut)
 
- # sf::write_sf(nl3$flowpaths, '/Users/mjohnson/Downloads/tmp2.gpkg', "fp")
- # sf::write_sf(nl3$catchments, '/Users/mjohnson/Downloads/tmp2.gpkg', "cat")
+  nl2 = collapse_headwaters(nl1, min_area_sqkm, min_length_km, condition, term_cut = term_cut)
+
+  nl3 = realign_topology(nl2, term_cut = term_cut)
+
+  nl3
 
 }
+
 
 #' Build a network list object
 #' @description  A network_list is a list of catchment and flowpaths `sf` objects that are validated.

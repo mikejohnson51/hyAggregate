@@ -58,15 +58,15 @@ Here we can view a map of the modified flowpath and catchment network. Note that
 
 ```{r, echo = FALSE}
 {par(mfrow = c(1,2))
-plot(st_geometry(gage_01013500$catchments), border = "red")
-plot(st_geometry(aggregated$catchments), border = "blue", add = TRUE)
-
-plot(st_geometry(gage_01013500$flowpaths), col = "red")
-plot(st_geometry(aggregated$flowpaths), col = "blue", add= TRUE, lwd = 2)
+  plot(st_geometry(gage_01013500$catchments), border = "red")
+  plot(st_geometry(aggregated$catchments), border = "blue", add = TRUE)
+  
+  plot(st_geometry(gage_01013500$flowpaths), col = "red")
+  plot(st_geometry(aggregated$flowpaths), col = "blue", add= TRUE, lwd = 2)
 }
 ```
 
-Equally we can ensure that our critieria was met by evaluating the catchment area and flowpath lengths across outputs:
+Equally we can ensure that our criteria was met by evaluating the catchment area and flowpath lengths across outputs:
 
 ```{r, echo = FALSE}
 {par(mfrow = c(2,2))

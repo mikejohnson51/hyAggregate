@@ -21,17 +21,26 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
   n   = check_network_validity(fl = network_list$flowpaths, cat = network_list$catchments)
 
   cat = n$catchments
+
   fl  = drop_artifical_splits(n$flowpaths)
 
   candidates =  filter(fl, !.data$ID %in% .data$toID)
 
+  end_nodes = fl %>%
+    nhdplusTools::rename_geometry("geometry") %>%
+    mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
+
+  candidates$inflows =  lengths(st_intersects(candidates, end_nodes)) > 1
+
   if (condition == "and") {
     candidates = candidates %>%
-      filter(.data$lengthkm < min_area_sqkm & .data$areasqkm < min_area_sqkm)  %>%
+      filter(.data$lengthkm < min_length_km & .data$areasqkm < min_area_sqkm)  %>%
+      filter(!.data$inflows)  %>%
       select(.data$ID, .data$toID)
   } else {
     candidates = candidates %>%
-      filter(.data$lengthkm < min_area_sqkm | .data$areasqkm < min_area_sqkm)  %>%
+      filter(.data$lengthkm < min_length_km | .data$areasqkm < min_area_sqkm)  %>%
+      filter(!.data$inflows)  %>%
       select(.data$ID, .data$toID)
   }
 
@@ -108,46 +117,15 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
       hyRefactor::union_polygons_geos('newID') %>%
       hyRefactor::clean_geometry('newID', keep = NULL) %>%
       select(ID = .data$newID) %>%
-      bind_rows(filter(cat, !.data$ID %in% im$oldIDs))
+      bind_rows(filter(cat, !.data$ID %in% im$oldIDs)) %>%
+      mutate(areasqkm = hyRefactor::add_areasqkm(.))
 
  ## TODO: look more closely at the example in the README and ID=125
-    find_and_remove_detached(fl  = nfp, cats = ccc, term_cut)
+    #xxx = find_and_remove_detached(fl  = nfp, cats = ccc, term_cut)
 
+    check_network_validity(nfp, ccc, term_cut = term_cut)
   } else {
-    find_and_remove_detached(fl, cat, term_cut)
+    check_network_validity(nfp, ccc, term_cut = term_cut)
   }
 }
 
-
-#' On a rare occasion, the combination of HY_Refactor water
-#' flying can result in a flowpath that (A) does not have any inflows, (B) violates lengths/area assumptions,
-#' (C) is NOT a headwater. In these cases a segement within the network can get removed leaving isolated/detached flowpaths.
-#' This functions is a first, but probably not ideal, stab at cleaning these up.
-#' @param fl a flowline sf object
-#' @param cats a catchment sf object
-#' @param term_cut cutoff integer to define terminal IDs
-#' @return a validated network list
-#' @export
-#' @importFrom  sf st_intersects
-#' @importFrom dplyr filter select mutate bind_rows
-#' @importFrom hyRefactor union_polygons_geos
-
-find_and_remove_detached = function(fl, cats, term_cut){
-
-  fl$test = lengths(st_intersects(fl))
-
-  fix  = filter(fl, .data$test < 2)
-
-  if(nrow(fix) > 0){
-    fl = filter(fl, !.data$ID %in% fix$ID)
-
-    fix_cats = filter(cats, .data$ID %in% fix$ID) %>%
-      mutate(ID = fix$toID) %>%
-      bind_rows(filter(cats, !.data$ID %in% fix$ID)) %>%
-      hyRefactor::union_polygons_geos("ID")
-
-    check_network_validity(select(fl, -.data$test), fix_cats, term_cut)
-  } else {
-    check_network_validity(select(fl, -.data$test), cats, term_cut)
-  }
-}
