@@ -175,7 +175,7 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
 
     check_network_validity(nfp, ccc, term_cut = term_cut)
   } else {
-    check_network_validity(nfp, ccc, term_cut = term_cut)
+    network_list
   }
 }
 

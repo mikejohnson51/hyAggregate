@@ -51,14 +51,11 @@ aggregate_by_thresholds = function(fl = NULL,
     build_network_list(gpkg, fl_name = fl_name, cat_name = cat_name, term_cut = term_cut)
   }
 
-  nl1 = merge_along_mainstem(nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut)
+  nl1 = merge_along_mainstem(network_list = nl, ideal_size, min_area_sqkm, min_length_km, term_cut = term_cut)
 
   nl2 = collapse_headwaters(network_list = nl1, min_area_sqkm, min_length_km, condition, term_cut = term_cut)
 
-  nl3 = realign_topology(nl2, term_cut = term_cut)
-
-  nl3
-
+  nl3 = realign_topology(network_list = nl2, term_cut = term_cut)
 }
 
 

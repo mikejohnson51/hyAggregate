@@ -15,12 +15,12 @@ BugReports: https://github.com/mikejohnson51/hyAggregate/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    RNetCDF,
     dplyr,
     hyRefactor,
     igraph,
     nhdplusTools,
     raster,
-    RNetCDF,
     sf,
     stats,
     tidyr,

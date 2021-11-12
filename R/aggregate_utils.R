@@ -200,7 +200,8 @@ aggregate_network_by_index <- function(fl, cat, index_table, grouping_id = "set"
       left_join(select(to_merge, .data$ID, .data$newID), by = c("toID" = "ID")) %>%
       select(-.data$toID) %>%
       rename(toID = .data$newID) %>%
-      bind_rows(filter(fin, .data$toID %in%.data$ID))
+      bind_rows(filter(fin, .data$toID %in%.data$ID)) %>%
+      select(-.data$n, -.data$set)
 
     ncat = right_join(cat, to_merge, by = 'ID') %>%
       filter(!st_is_empty(.)) %>%

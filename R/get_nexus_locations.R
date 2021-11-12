@@ -10,11 +10,11 @@
 
 get_nexus_locations = function(fp, term_cut =  100000000){
 
-  term_node = filter(fp, .data$toID > term_cut) %>%
+  term_node = filter(fp, .data$toID > term_cut | .data$toID == 0) %>%
     rename_geometry("geometry") %>%
     mutate(geometry = get_node(., "end")$geometry) %>%
-    #mutate(ID = paste0(terminal_nexus_prefix, toID)) %>%
-    select(.data$ID)
+    slice_min(.data$Hydroseq) %>%
+    select(ID = .data$toID)
 
   nex = fp %>%
     left_join(st_drop_geometry(select(., toID = .data$ID, ds_toID = .data$toID)), by = c("toID")) %>%
