@@ -16,12 +16,17 @@ get_nexus_locations = function(fp, term_cut =  100000000){
     slice_min(.data$Hydroseq) %>%
     select(ID = .data$toID)
 
-  nex = fp %>%
-    left_join(st_drop_geometry(select(., toID = .data$ID, ds_toID = .data$toID)), by = c("toID")) %>%
-    filter(.data$ID %in% unique(.data$toID)) %>%
-    rename_geometry("geometry") %>%
-    mutate(geometry = get_node(., "start")$geometry) %>%
-    select(.data$ID, .data$toID)
+
+  if(nrow(fp) <= 1){
+    nex = term_node
+  } else {
+    nex = fp %>%
+      left_join(st_drop_geometry(select(., toID = .data$ID, ds_toID = .data$toID)), by = c("toID")) %>%
+      filter(.data$ID %in% unique(.data$toID)) %>%
+      rename_geometry("geometry") %>%
+      mutate(geometry = get_node(., "start")$geometry) %>%
+      select(.data$ID, .data$toID)
+  }
 
   imap = st_intersects(nex, fp)
 
@@ -66,7 +71,8 @@ get_nexus_locations = function(fp, term_cut =  100000000){
     st_as_sf() %>%
     select(.data$ID) %>%
     bind_rows(to_keep) %>%
-    bind_rows(term_node)
+    bind_rows(term_node) %>%
+    filter(!duplicated(.))
 
   df
 }

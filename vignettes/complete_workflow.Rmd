@@ -1,0 +1,91 @@
+---
+title: "complete_workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{complete_workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width=7,
+  fig.height=4,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+```{r setup, warning=F, message=F}
+library(hyAggregate)
+library(dplyr)
+
+# Temporary file to write to data too
+tempfile = tempfile(fileext = ".gpkg")
+
+base     = get_UT_geoms(arrow::read_parquet("/Volumes/Transcend/ngen/enhd_nhdplusatts.parquet"),
+                      reference_fabric_dir = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-reference', 
+               comid = 19621426)
+
+ref = refactor_wrapper(flowpaths  = base$fps,
+                       catchments = base$cats,
+                       facfdr     = '/Volumes/Transcend/ngen/fdrfac',
+                       outfile    = tempfile)
+
+agg = aggregate_by_thresholds(gpkg = tempfile)
+
+```
+
+```{r plot, echo = FALSE}
+library(ggplot2)
+library(patchwork)
+
+base_ln = ggplot(data = base$fps, aes(x = LENGTHKM)) +
+  geom_histogram(bins= 100, fill="#69b3a2", color="#69b3a2", alpha=0.9)+
+  geom_vline(xintercept = 1, lwd = 1) +
+  labs(x = "Length (KM)", title = paste0("Reference Flowlines\n (", nrow(base$fps), ")"))
+
+rfc_ln = ggplot(data = ref$fps, aes(x = LENGTHKM)) +
+  geom_histogram(bins= 100, fill="#69b3a2", color="#69b3a2", alpha=0.9) +
+  geom_vline(xintercept = 1, lwd = 1) +
+  labs(x = "Length (KM)", title = paste0("Refactored Flowlines\n (",nrow(ref$fps), ")"))
+
+agg_ln = ggplot(data = agg$flowpaths, aes(x = lengthkm)) +
+  geom_histogram(bins= 100, fill="#69b3a2", color="#69b3a2", alpha=0.9)+
+  geom_vline(xintercept = 1, lwd = 1) +
+  labs(x = "Length (KM)", title = paste0("Aggregated Flowlines\n (", nrow(agg$flowpaths), ")"))
+
+#####
+
+base_ar = ggplot(data = base$cats, aes(x = areqsqkm)) +
+  geom_histogram(bins= 100, fill="#404080", color="#404080", alpha=0.9)+
+  geom_vline(xintercept = 3, lwd = 1) +
+  geom_vline(xintercept = 10, lwd = 1) +
+  geom_vline(xintercept = 20, lwd = 1) +
+  xlim(0,30) +
+  labs(x = "Area (KM2)", title = paste0("Refactored Catchments\n (", nrow(base$cats), ")"))
+
+rfc_ar = ggplot(data = ref$cats, aes(x = areasqkm)) +
+  geom_histogram(bins= 100, fill="#404080", color="#404080", alpha=0.9)+
+  geom_vline(xintercept = 3, lwd = 1) +
+  geom_vline(xintercept = 10, lwd = 1) +
+  geom_vline(xintercept = 20, lwd = 1) +
+  xlim(0,30) +
+  labs(x = "Area (KM2)", title = paste0("Aggregated Catchments\n (", nrow(ref$cats), ")"))
+
+agg_ar = ggplot(data = agg$catchments, aes(x = areasqkm)) +
+  geom_histogram(bins= 100, fill="#404080", color="#404080", alpha=0.9)+
+  geom_vline(xintercept = 3, lwd = 1) +
+  geom_vline(xintercept = 10, lwd = 1) +
+  geom_vline(xintercept = 20, lwd = 1) +
+  xlim(0,30) +
+  labs(x = "Area (KM2)", title = paste0("Aggregated Catchments\n (", nrow(agg$catchments), ")"))
+
+base_ln + rfc_ln + agg_ln
+
+
+base_ar + rfc_ar + agg_ar
+```
+

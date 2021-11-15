@@ -114,7 +114,9 @@ refactor_wrapper = function(flowpaths,
   }
 
   unlink(list(tr, tf))
-  return(outfile)
+
+  list(fps  = read_sf(outfile, "refactored_flowpaths"),
+       cats = read_sf(outfile, "refactored_catchments"))
 }
 
 

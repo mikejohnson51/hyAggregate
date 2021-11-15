@@ -10,6 +10,8 @@
 
 realign_topology = function(network_list, term_cut = 100000000){
 
+  if(nrow(network_list$flowpaths) <= 1){ return(network_list)}
+
   tmp      <- drop_artifical_splits(network_list$flowpaths)
   term_fl  <- filter(tmp, .data$toID == 0)
 
@@ -21,7 +23,7 @@ realign_topology = function(network_list, term_cut = 100000000){
 
   # ID every line as a inflow-nex or inflow-junction
 
-  nexIDs = get_nexus_locations(tmp)
+  nexIDs = get_nexus_locations(fp = tmp)
 
   ends = tmp  %>%
     nhdplusTools::rename_geometry('geometry') %>%
@@ -41,8 +43,8 @@ realign_topology = function(network_list, term_cut = 100000000){
     group_by(.data$ID) %>%
     dplyr::slice_min(.data$parralel) %>%
     ungroup() %>%
-    left_join(select(., ds_nx = .data$graph_toID, graph_toID = .data$ID)) %>%
-    left_join(st_drop_geometry(select(tmp, .data$ID, .data$type))) %>%
+    left_join(select(., ds_nx = .data$graph_toID, graph_toID = .data$ID), by = "graph_toID") %>%
+    left_join(st_drop_geometry(select(tmp, .data$ID, .data$type)), by = "ID") %>%
     mutate(real_toID = ifelse(.data$type == "into_jun" & !.data$parralel, .data$ds_nx, .data$graph_toID)) %>%
     select(.data$ID, .data$real_toID) %>%
     filter(!duplicated(.)) %>%

@@ -14,6 +14,7 @@
 #' @param condition How should headwaters be collapsed? Those where the area AND length are less then
 #' the prescribed thresholds, or where the area OR length are less then the thresholds
 #' (options are "and" or "or").
+#' @param write should the outputs be written to the input gpkg (only works if !is.null(gpkg))
 #' @details This is a convenient wrapper function that implements four phases
 #' of the network aggregation workflow: merge along mainstems, correcting parallel flow, collapsing headwaters.
 #' @seealso
@@ -39,7 +40,8 @@ aggregate_by_thresholds = function(fl = NULL,
                                    min_area_sqkm = 3,
                                    min_length_km = 1,
                                    term_cut = 100000000,
-                                   condition = "or"){
+                                   condition = "or",
+                                   write = FALSE){
 
 
   nl = if(is.null(gpkg)){
@@ -56,6 +58,15 @@ aggregate_by_thresholds = function(fl = NULL,
   nl2 = collapse_headwaters(network_list = nl1, min_area_sqkm, min_length_km, condition, term_cut = term_cut)
 
   nl3 = realign_topology(network_list = nl2, term_cut = term_cut)
+
+
+  if(!is.null(gpkg) & write){
+    sf::write_sf(nl3$flowpaths, gpkg, "aggregated_flowpaths")
+    sf::write_sf(nl3$catchments, gpkg, "aggregated_catchments")
+  }
+
+  nl3
+
 }
 
 

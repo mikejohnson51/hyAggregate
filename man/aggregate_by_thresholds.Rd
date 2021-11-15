@@ -14,7 +14,8 @@ aggregate_by_thresholds(
   min_area_sqkm = 3,
   min_length_km = 1,
   term_cut = 100000000,
-  condition = "or"
+  condition = "or",
+  write = FALSE
 )
 }
 \arguments{
@@ -39,6 +40,8 @@ aggregate_by_thresholds(
 \item{condition}{How should headwaters be collapsed? Those where the area AND length are less then
 the prescribed thresholds, or where the area OR length are less then the thresholds
 (options are "and" or "or").}
+
+\item{write}{should the outputs be written to the input gpkg (only works if !is.null(gpkg))}
 }
 \value{
 list object
