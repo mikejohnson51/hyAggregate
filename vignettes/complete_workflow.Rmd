@@ -26,16 +26,43 @@ library(dplyr)
 tempfile = tempfile(fileext = ".gpkg")
 
 base     = get_UT_geoms(arrow::read_parquet("/Volumes/Transcend/ngen/enhd_nhdplusatts.parquet"),
-                      reference_fabric_dir = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-reference', 
+                        reference_fabric_dir = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-reference', 
                comid = 19621426)
+
 
 ref = refactor_wrapper(flowpaths  = base$fps,
                        catchments = base$cats,
-                       facfdr     = '/Volumes/Transcend/ngen/fdrfac',
+                       facfdr     = '/Volumes/Transcend/ngen/fdrfac_cog',
                        outfile    = tempfile)
+
+rec = build_network_list(tempfile)
 
 agg = aggregate_by_thresholds(gpkg = tempfile)
 
+mean(base$cats$areqsqkm)
+mean(base$fps$LENGTHKM)
+
+mean(rec$catchments$areasqkm)
+mean(rec$flowpaths$LENGTHKM)
+
+mean(agg$catchments$areasqkm)
+mean(agg$flowpaths$lengthkm)
+
+sum(st_length(base$fps)) /1e6
+sum(st_length(rec$flowpaths)) /1e6
+sum(st_length(agg$flowpaths)) /1e6
+
+sum(base$cats$areqsqkm < 3)
+sum(rec$catchments$areasqkm < 3)
+sum(agg$catchments$areasqkm < 3)
+
+sum(base$fps$LENGTHKM < 1)
+sum(rec$flowpaths$lengthkm < 1)
+sum(agg$flowpaths$lengthkm < 1)
+
+write_sf(agg$flowpaths, "/Volumes/Transcend/ngen/animation-data/example.gpkg", "fps")
+
+write_sf(agg$catchments , "/Volumes/Transcend/ngen/animation-data/example.gpkg", "cats")
 ```
 
 ```{r plot, echo = FALSE}

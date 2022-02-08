@@ -63,8 +63,9 @@ refactor_wrapper = function(flowpaths,
 
   if(!is.null(routing)){
 
-    rec$order = nhdplusTools::get_streamorder(st_drop_geometry(select(rec, .data$ID, .data$toID)),
-                                              status = FALSE)
+    message("Adding RouteLink attributes")
+
+    rec$order = nhdplusTools::get_streamorder(st_drop_geometry(select(rec, .data$ID, .data$toID)), status = FALSE)
 
     rec = rec %>%
       rename(length_km = .data$lengthkm) %>%
@@ -85,10 +86,13 @@ refactor_wrapper = function(flowpaths,
 
   if(!is.null(facfdr)){
 
+    message("Reconciling Catchments")
+
     rpus = unique(flowpaths$RPUID)
     rpus = rpus[!is.na(rpus)]
 
     fdrfac_files = list.files(facfdr, pattern = rpus, full.names = TRUE)
+    fdrfac_files = grep(".tif$", fdrfac_files, value = TRUE)
     fdr = raster::raster(grep("_fdr", fdrfac_files, value = TRUE))
     fac = raster::raster(grep("_fac", fdrfac_files, value = TRUE))
     catchments <- st_transform(catchments, st_crs(fdr))
@@ -109,6 +113,8 @@ refactor_wrapper = function(flowpaths,
                                               para      = cores,
                                               cache     = NULL,
                                               fix_catchments = TRUE)
+
+
 
     write_sf(st_transform(divides, 5070), outfile, "refactored_catchments", overwrite = TRUE)
   }
