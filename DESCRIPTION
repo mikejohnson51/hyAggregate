@@ -15,16 +15,11 @@ BugReports: https://github.com/mikejohnson51/hyAggregate/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
-    DBI,
     dplyr,
     hyRefactor,
     igraph,
     nhdplusTools,
-    raster,
-    RNetCDF,
-    RSQLite,
     sf,
-    stats,
     tidyr,
     units
 Remotes: dblodgett-usgs/hyRefactor
