@@ -82,6 +82,13 @@ aggregate_by_thresholds = function(fl = NULL,
 #' @export
 #' @importFrom sf read_sf
 
-build_network_list = function(gpkg = NULL, fl_name = "refactored_flowpaths", cat_name = "refactored_catchments", term_cut = 100000000){
-  check_network_validity(fl = read_sf(gpkg, fl_name), cat = read_sf(gpkg, cat_name), term_cut = term_cut)
+build_network_list = function(gpkg = NULL,
+                              fl_name = "refactored_flowpaths",
+                              cat_name = "refactored_catchments",
+                              term_cut = 100000000){
+
+  check_network_validity(fl = read_sf(gpkg, fl_name),
+                         cat = read_sf(gpkg, cat_name),
+                         term_cut = term_cut)
+
 }

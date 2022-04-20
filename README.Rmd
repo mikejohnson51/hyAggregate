@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # hyAggregate
 
 <!-- badges: start -->
-[![Dependencies](https://img.shields.io/badge/dependencies-11/93-red?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
 [![R CMD Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 [![LifeCycle](man/figures/lifecycle/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)

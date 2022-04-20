@@ -22,47 +22,92 @@ knitr::opts_chunk$set(
 library(hyAggregate)
 library(dplyr)
 
+
+network_file         = "/Volumes/Transcend/ngen/enhd_nhdplusatts.parquet"
+reference_flowlines  = "/Volumes/Transcend/ngen/reference_CONUS.gpkg"
+reference_catchments = "/Volumes/Transcend/ngen/reference_catchments.gpkg"
+facfdr               = "/Volumes/Transcend/ngen/fdrfac_cog"
+outfile              = "/Volumes/Transcend/ngen/tmp.gpkg"
+
+
+
+source('/Users/mjohnson/github/hyRelease/R/update_functions.R')
+
 # Temporary file to write to data too
-tempfile = tempfile(fileext = ".gpkg")
-
-base     = get_UT_geoms(arrow::read_parquet("/Volumes/Transcend/ngen/enhd_nhdplusatts.parquet"),
-                        reference_fabric_dir = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-reference', 
-               comid = 19621426)
 
 
+base     = get_UT_reference(arrow::read_parquet(network_file),
+                            reference_flowlines =  reference_flowlines,
+                            comid = 19621426)
+
+names(base$fps)
 ref = refactor_wrapper(flowpaths  = base$fps,
                        catchments = base$cats,
-                       facfdr     = '/Volumes/Transcend/ngen/fdrfac_cog',
-                       outfile    = tempfile)
+                       facfdr     = facfdr,
+                       outfile    = outfile)
 
-rec = build_network_list(tempfile)
+rec = build_network_list(out)
 
 agg = aggregate_by_thresholds(gpkg = tempfile)
 
-mean(base$cats$areqsqkm)
-mean(base$fps$LENGTHKM)
+nex = hyAggregate::get_nexus_locations(agg$flowpaths)
 
-mean(rec$catchments$areasqkm)
-mean(rec$flowpaths$LENGTHKM)
+# mapview::mapview(agg) + nex
+# 
+# mean(base$cats$areqsqkm)
+# mean(base$fps$LENGTHKM)
+# 
+# mean(rec$catchments$areasqkm)
+# mean(rec$flowpaths$LENGTHKM)
+# 
+# mean(agg$catchments$areasqkm)
+# mean(agg$flowpaths$lengthkm)
+# 
+# sum(st_length(base$fps)) /1e6
+# sum(st_length(rec$flowpaths)) /1e6
+# sum(st_length(agg$flowpaths)) /1e6
+# 
+# sum(base$cats$areqsqkm < 3)
+# sum(rec$catchments$areasqkm < 3)
+# sum(agg$catchments$areasqkm < 3)
+# 
+# sum(base$fps$LENGTHKM < 1)
+# sum(rec$flowpaths$lengthkm < 1)
+# sum(agg$flowpaths$lengthkm < 1)
 
-mean(agg$catchments$areasqkm)
-mean(agg$flowpaths$lengthkm)
+cat = filter(agg$catchments, ID %in% c(182, 183,184,187,188)) %>% 
+  mutate(ID = case_when(ID == 182 ~ 5,
+                        ID == 183 ~ 3,
+                        ID == 184 ~ 1,
+                        ID == 187 ~ 2,
+                        ID == 188 ~ 4)) %>% 
+  mutate(ID = paste("cat-", ID))
 
-sum(st_length(base$fps)) /1e6
-sum(st_length(rec$flowpaths)) /1e6
-sum(st_length(agg$flowpaths)) /1e6
+fp  = filter(agg$flowpaths, ID %in% c(182, 183,184,187,188)) %>% 
+    mutate(toID = case_when(toID == 182 ~ 2,
+                            toID == 183 ~ 1,
+                            toID == 29  ~ 3)) %>% 
+  mutate(toID = paste0("toID: nex-", toID))
 
-sum(base$cats$areqsqkm < 3)
-sum(rec$catchments$areasqkm < 3)
-sum(agg$catchments$areasqkm < 3)
+fp$toID
 
-sum(base$fps$LENGTHKM < 1)
-sum(rec$flowpaths$lengthkm < 1)
-sum(agg$flowpaths$lengthkm < 1)
+nex2 = nex %>% 
+  filter(ID %in% c(182, 183)) %>% 
+  mutate(ID = case_when(ID == 182 ~ 2,
+                        ID == 183 ~ 1)) %>% 
+  mutate(ID = paste0("nex-", ID))
 
-write_sf(agg$flowpaths, "/Volumes/Transcend/ngen/animation-data/example.gpkg", "fps")
+write_sf(fp, "/Users/mjohnson/Desktop/example.gpkg", "fps")
 
-write_sf(agg$catchments , "/Volumes/Transcend/ngen/animation-data/example.gpkg", "cats")
+write_sf(cat , "/Users/mjohnson/Desktop/example.gpkg", "cats")
+
+write_sf(nex2 , "/Users/mjohnson/Desktop/example.gpkg", "nex")
+
+
+
+agg$flowpaths$ID = paste0("ID: ", agg$flowpaths$ID)
+agg$flowpaths$toID = paste0("toID: ", agg$flowpaths$toID)
+
 ```
 
 ```{r plot, echo = FALSE}

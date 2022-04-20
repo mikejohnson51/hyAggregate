@@ -17,7 +17,7 @@ get_nexus_locations = function(fp, term_cut =  100000000){
     select(ID = .data$toID)
 
 
-  if(nrow(fp) <= 1){
+  if(nrow(fp) <= 2){
     nex = term_node
   } else {
     nex = fp %>%

@@ -10,7 +10,7 @@
 
 realign_topology = function(network_list, term_cut = 100000000){
 
-  if(nrow(network_list$flowpaths) <= 1){ return(network_list)}
+  if(nrow(network_list$flowpaths) <= 2){ return(network_list)}
 
   tmp      <- drop_artifical_splits(network_list$flowpaths)
   term_fl  <- filter(tmp, .data$toID == 0)
