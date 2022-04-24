@@ -29,19 +29,17 @@
 #' @importFrom dplyr `%>%`
 #'
 
-# agg = hyAggregate::aggregate_by_thresholds(gpkg = '/Volumes/Transcend/ngen/CONUS-hydrofabric/ngen-refactor/01a/rf_s10000_m1000_c1000.gpkg')
-
 aggregate_by_thresholds = function(fl = NULL,
                                    catchments = NULL,
                                    gpkg = NULL,
-                                   fl_name  = "refactored_flowpaths",
-                                   cat_name = "refactored_catchments",
-                                   ideal_size    = 10,
-                                   min_area_sqkm = 3,
-                                   min_length_km = 1,
+                                   fl_name  = NULL,
+                                   cat_name = NULL,
+                                   ideal_size    = NULL,
+                                   min_area_sqkm = NULL,
+                                   min_length_km = 2,
                                    term_cut = 100000000,
                                    condition = "or",
-                                   write = FALSE){
+                                   outfile = NULL){
 
 
   nl = if(is.null(gpkg)){
@@ -59,14 +57,17 @@ aggregate_by_thresholds = function(fl = NULL,
 
   nl3 = realign_topology(network_list = nl2, term_cut = term_cut)
 
+  if(!is.null(outfile)){
+    if(!is.null(nl3$flowpaths)){
+      sf::write_sf(nl3$flowpaths, outfile, "aggregated_flowpaths")
+    }
 
-  if(!is.null(gpkg) & write){
-    sf::write_sf(nl3$flowpaths, gpkg, "aggregated_flowpaths")
-    sf::write_sf(nl3$catchments, gpkg, "aggregated_catchments")
+    if(!is.null(nl3$catchments)){
+      sf::write_sf(nl3$catchments, outfile, "aggregated_catchments")
+    }
+  } else {
+    nl3
   }
-
-  nl3
-
 }
 
 
@@ -87,8 +88,20 @@ build_network_list = function(gpkg = NULL,
                               cat_name = "refactored_catchments",
                               term_cut = 100000000){
 
-  check_network_validity(fl = read_sf(gpkg, fl_name),
-                         cat = read_sf(gpkg, cat_name),
-                         term_cut = term_cut)
+
+  if(!is.null(fl_name)){
+    fl = read_sf(gpkg, fl_name)
+  } else {
+    fl = NULL
+  }
+
+  if(!is.null(cat_name)){
+    cat = read_sf(gpkg, cat_name)
+  } else {
+    cat = NULL
+  }
+
+
+  check_network_validity(fl,  cat, term_cut = term_cut)
 
 }

@@ -33,22 +33,39 @@ outfile              = "/Volumes/Transcend/ngen/tmp.gpkg"
 
 source('/Users/mjohnson/github/hyRelease/R/update_functions.R')
 
-# Temporary file to write to data too
 
-
-base     = get_UT_reference(arrow::read_parquet(network_file),
+outfile     = get_UT_reference(
+                            network= arrow::read_parquet(network_file),
                             reference_flowlines =  reference_flowlines,
-                            comid = 19621426)
+                            comid = 3766334,
+                            outfile = outfile)
 
-names(base$fps)
-ref = refactor_wrapper(flowpaths  = base$fps,
-                       catchments = base$cats,
-                       facfdr     = facfdr,
-                       outfile    = outfile)
+og  = sf::read_sf(outfile, "reference_flowpaths")
 
-rec = build_network_list(out)
+fp$LENGTHKM
 
-agg = aggregate_by_thresholds(gpkg = tempfile)
+refactor_wrapper(flowpaths  = sf::read_sf(outfile, "reference_flowpaths"),
+                 catchments = NULL,
+                 facfdr     = facfdr,
+                 outfile    = outfile)
+
+
+ref  = sf::read_sf(outfile, "refactored_flowpaths")
+
+
+
+agg = aggregate_by_thresholds(gpkg = outfile,
+                              fl_name = "refactored_flowpaths",
+                              min_length_km = 1,
+                              outfile = outfile)
+
+
+og$LENGTHKM |> range()
+ref$LENGTHKM |> range()
+agg$flowpaths$lengthkm |> range()
+
+agg$flowpaths  |> 
+  mapview::mapview()
 
 nex = hyAggregate::get_nexus_locations(agg$flowpaths)
 

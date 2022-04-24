@@ -37,18 +37,20 @@ check_network_validity     <- function(fl, cat, term_cut = 100000000){
 
   if(all(DAG,  CONNECTION)){
 
-    cat =  mutate(cat, areasqkm = hyRefactor::add_areasqkm(cat)) %>%
-      select(.data$ID, .data$areasqkm)
-
     fl  = mutate(fl, lengthkm = add_lengthkm(fl))
 
-    if('areasqkm' %in% names(fl)){
-      fl = fl %>%
-        select(-.data$areasqkm) %>%
-        left_join(st_drop_geometry(cat), by = "ID")
-    } else {
-      fl = fl %>%
-        left_join(st_drop_geometry(cat), by = "ID")
+    if(!is.null(cat)){
+      cat =  mutate(cat, areasqkm = hyRefactor::add_areasqkm(cat)) %>%
+        select(.data$ID, .data$areasqkm)
+
+      if('areasqkm' %in% names(fl)){
+        fl = fl %>%
+          select(-.data$areasqkm) %>%
+          left_join(st_drop_geometry(cat), by = "ID")
+      } else {
+        fl = fl %>%
+          left_join(st_drop_geometry(cat), by = "ID")
+      }
     }
 
     return(list(flowpaths = fl, catchments = cat))

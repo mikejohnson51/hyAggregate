@@ -27,13 +27,27 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
   candidates =  filter(fl, !.data$ID %in% .data$toID)
 
 
+  if(all(!is.null(min_length_km), 'lengthkm' %in% names(candidates))){
+    c1 = candidates$lengthkm < min_length_km
+  } else {
+    c1  = rep(FALSE, nrow(candidates))
+  }
+
+
+  if(all(!is.null(min_area_sqkm), 'areasqkm' %in% names(candidates))){
+    c2 = candidates$areasqkm < min_area_sqkm
+  } else {
+    c2  = rep(FALSE, nrow(candidates))
+  }
+
+
   if (condition == "and") {
     candidates = candidates %>%
-      filter(.data$lengthkm < min_length_km & .data$areasqkm < min_area_sqkm)  %>%
+      filter(c1 & c2)  %>%
       select(.data$ID, .data$toID)
   } else {
     candidates = candidates %>%
-      filter(.data$lengthkm < min_length_km | .data$areasqkm < min_area_sqkm)  %>%
+      filter(c1 | c2)  %>%
       select(.data$ID, .data$toID)
   }
 
@@ -165,14 +179,18 @@ collapse_headwaters   <- function(network_list, min_area_sqkm = 3,  min_length_k
 
     im =  filter(index_map, !duplicated(index_map))
 
-    ccc = left_join(im, cat, by = c("oldIDs" = "ID")) %>%
-      st_as_sf() %>%
-      filter(!st_is_empty(.)) %>%
-      hyRefactor::union_polygons_geos('newID') %>%
-      hyRefactor::clean_geometry('newID', keep = NULL) %>%
-      select(ID = .data$newID) %>%
-      bind_rows(filter(cat, !.data$ID %in% im$oldIDs)) %>%
-      mutate(areasqkm = hyRefactor::add_areasqkm(.))
+    if(!is.null(cat)){
+      ccc = left_join(im, cat, by = c("oldIDs" = "ID")) %>%
+        st_as_sf() %>%
+        filter(!st_is_empty(.)) %>%
+        hyRefactor::union_polygons_geos('newID') %>%
+        hyRefactor::clean_geometry('newID', keep = NULL) %>%
+        select(ID = .data$newID) %>%
+        bind_rows(filter(cat, !.data$ID %in% im$oldIDs)) %>%
+        mutate(areasqkm = hyRefactor::add_areasqkm(.))
+    } else {
+      ccc = NULL
+    }
 
     check_network_validity(nfp, ccc, term_cut = term_cut)
 
