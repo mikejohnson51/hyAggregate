@@ -1,11 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+.blackbox { padding: 1em; background: black; color: white; border: 2px
+solid orange; border-radius: 10px; } .center { text-align: center; }
+
 # hyAggregate
 
 <!-- badges: start -->
 
-[![Dependencies](https://img.shields.io/badge/dependencies-9/89-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-15/82-red?style=flat)](#)
 [![R CMD
 Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License:
@@ -19,64 +22,103 @@ networks to meet user defined length and area minimum thresholds
 
 ## Installation
 
-You can install the released version of `hyAggregate` from
-[Github](https://CRAN.R-project.org) with:
+You can install the released version of `hyAggregate` from Github with:
 
 ``` r
 remotes::install_github("mikejohnson51/hyAggregate")
 ```
 
-## Example
+## Motivation
 
-This is a basic example which shows you how hyAggrgate works. The core
-premise is that outputs from `hyRefactor` can be aggregated to meet
-minimum catchment area and flowpath length criteria.
-
-Here we aggregate the refactored network draining to USGS-01013500 to an
-ideal size of 10sqkm, with a minimum allowable catchment area of 3sqkm
-and a minimum allowable flowpath length of 1 km.
-
-``` r
-library(hyAggregate)
-library(dplyr)
-library(sf)
-
-# -- load some sample data -- #
-load(system.file("extdata", "gage_01013500.rda", package = "hyAggregate"))
-
-# -- Run the Aggregation -- #
-aggregated = aggregate_by_thresholds(fl = gage_01013500$flowpaths,
-                                     catchments = gage_01013500$catchments,
-                                     ideal_size = 10,
-                                     min_area_sqkm = 3,
-                                     min_length_km = 1)
-```
-
-Here we can view a map of the modified flowpath and catchment network.
-Note that aggregating any network will result in lost resolution on the
-network when data conforms to the HY_Feature standand.
-
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
-
-Equally we can ensure that our criteria was met by evaluating the
-catchment area and flowpath lengths across outputs:
-
-    #> Warning: Removed 2 rows containing missing values (geom_bar).
-
-    #> Warning: Removed 2 rows containing missing values (geom_bar).
-
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
-
-## Nexus Locations
+`hyAggregate` is part of a larger family of hydrofabric development
+projects/packages aiming to support federal (USGS/NOAA) water modeling
+efforts. `hyAggregate` relies on data products generated as part of the
+[Geospatial Fabric for National Hydrologic Modeling, version
+2.0](https://www.sciencebase.gov/catalog/item/60be0e53d34e86b93891012b)
+project. The general outline of how this project is conceptualized can
+be seen in the roadmap below:
 
 ``` r
-nex = get_nexus_locations(aggregated$flowpaths, term_cut = 1000000)
-
-{
-  plot(st_geometry(aggregated$catchments), border = "gray")
-  plot(st_geometry(gage_01013500$flowpaths), col = "blue", add = TRUE)
-  plot(st_geometry(nex), col = "red", pch = 16, cex = .5, add = TRUE)
-}
+knitr::include_graphics("img/roadmap.png")
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+<img src="img/roadmap.png" width="100%" /> In the first row of Figure 1,
+there are thre (3) baseline products. 1. An updated *network attributes*
+table that provides attributes for the network features in the data
+model of NHDPlus2, but with substantial network improvements based on
+contributions for the USGS, NOAA OWP, NCAR and others. 2. A set of
+*reference catchment* geometries in which geometric topology errors and
+artifacts in the NHDPlus CatchmentSP layer are corrected 3. A set of
+*reference flowpath* geometries were the headwater flowpaths have been
+replaced with the NHDBurn lines
+
+The CONUS reference files for these baseline datasets can be downloaded
+here respectively (attributes, catchments, flowpaths)
+
+In the second row of Figure 2, the baseline products are **refactored**
+based on a minimum flowpath criterion
+
+<div id="hello" class="blackbox center">
+
+**NOTICE!** ::
+
+Thank you for noticing this **new notice**! Your noticing it has been
+noted, and *will be reported to the authorities*!
+
+</div>
+
+## Getting Baseline Data
+
+the `hyAggregate::get_reference_fabric()` utility will download the most
+current geofabric for
+
+``` r
+file = get_reference_fabric(VPU = "01", dir = "./data")
+
+sf::st_layers(file)
+#> Driver: GPKG 
+#> Available layers:
+#>       layer_name     geometry_type features fields
+#> 1     final_POIS             Point     3185     11
+#> 2   nhd_flowline       Line String    65600     36
+#> 3  nhd_catchment           Polygon    65968      6
+#> 4     reconciled Multi Line String    40269      7
+#> 5        divides           Polygon    40191      4
+#> 6 mapped_outlets             Point     3400      3
+#> 7       agg_cats           Polygon     3400      3
+#> 8      agg_fline       Line String     3400      3
+#> 9   lookup_table                NA    63892      6
+```
+
+For this VPU - the ‘nhd_flowline’ and ‘nhd_catchment’ layers are those
+associated with the baseline data. The `reconciled` and `divides` layers
+are the output of the refactoring process (row 2 in figure 1). The
+remaining layers are those that are central to the `USGS gfv2.0`
+modeling task.
+
+This repo (`hyAggregate`) houses the workflow(s) for generating the
+needed output for the `NOAA NextGen` modeling task, that starts from the
+`reconciled` and `divides` layers.
+
+### Read a File
+
+``` r
+## Read Options
+# pacman::p_load(sf, DBI, RSQLite, dplyr) 
+# 
+# ### 1. GDAL/geopackage
+# st_layers(g01)
+# fps1 = read_sf(g01, "catchment_edge_list")
+# head(fps1)
+# 
+# ### 2. SQLite/Database
+# db <- dbConnect(SQLite(), g01)
+# dbListTables(db)
+# fps2 = tbl(db, "waterbody_params") |> 
+#   select(-fid) |> 
+#   collect()
+# 
+# head(fps2)
+# 
+# dbDisconnect(db)
+```

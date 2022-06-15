@@ -42,7 +42,6 @@ outfile     = get_UT_reference(
 
 og  = sf::read_sf(outfile, "reference_flowpaths")
 
-fp$LENGTHKM
 
 refactor_wrapper(flowpaths  = sf::read_sf(outfile, "reference_flowpaths"),
                  catchments = NULL,
@@ -51,7 +50,6 @@ refactor_wrapper(flowpaths  = sf::read_sf(outfile, "reference_flowpaths"),
 
 
 ref  = sf::read_sf(outfile, "refactored_flowpaths")
-
 
 
 agg = aggregate_by_thresholds(gpkg = outfile,

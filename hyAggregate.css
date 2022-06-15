@@ -1,0 +1,10 @@
+.blackbox {
+  padding: 1em;
+  background: #F6F6F6;
+  color: black;
+  border: 4px solid orange;
+  border-radius: 10px;
+}
+.left {
+  text-align: left;
+}

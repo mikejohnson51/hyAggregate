@@ -1,145 +1,540 @@
 ---
-output: github_document
+title: NextGen Hydrofabric  
+subtitle: What is it and how do we get there?
+author: Mike Johnson^[Lynker, jjohnson@lynker.com]
+output:
+  html_document:
+    css: hyAggregate.css
+    toc: true
+    highlight: tango
+    theme: united
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(
+ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+
+VPU = "01"
+devtools::load_all()
+library(sf)
+library(glue)
 ```
 
-# hyAggregate
+
 
 <!-- badges: start -->
-[![Dependencies](https://img.shields.io/badge/dependencies-7/90-orange?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-15/82-red?style=flat)](#)
 [![R CMD Check](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/mikejohnson51/hyAggregate/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://choosealicense.com/licenses/mit/)
 [![LifeCycle](man/figures/lifecycle/lifecycle-experimental.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The goal of `hyAggregate` is to aggregate refactored (see [hyRefactor](https://github.com/dblodgett-usgs/hyRefactor)) hydrologic networks to meet user defined length and area minimum thresholds
+# hyAggregate
+
+The goal of `hyAggregate` is to develop _aggregated_ hydrologic and hydraulic networks to inform modeling tasks reliant on uniform length (flowpath) and area (catchment) distributions.
+
 
 ## Installation
 
-You can install the released version of `hyAggregate` from [Github](https://CRAN.R-project.org) with:
+Building a nextgen ready hydrofabric only requires one package that can be installed from Github with:
 
-``` r
+```r
 remotes::install_github("mikejohnson51/hyAggregate")
 ```
 
-## Example
+# What is a hydrofabric?
 
-This is a basic example which shows you how hyAggrgate works. The core premise is that outputs from `hyRefactor` can be aggregated to meet minimum catchment area and flowpath length criteria.
+The first question generally raised is, "what is a "hydrofabric"? To date, the term has been nebulous at best and has been used to describe data as narrow as a set of cartographic lines and network connectivity, all the way to encompass the entire spatial data architectures needed to map and model the flow of water and flood extents. 
 
-Here we aggregate the refactored network draining to USGS-01013500 to an ideal size of 10sqkm, with a minimum allowable catchment area of 3sqkm and a minimum allowable flowpath length of 1 km.
+Here, a "Nextgen Hydrofabric" will include the following four parts:
 
-```{r example, message  = FALSE, warning=FALSE}
-library(hyAggregate)
-library(dplyr)
-library(sf)
+1. The blue line **features** (flowpaths) and per-flowline catchments **features**
 
-# -- load some sample data -- #
-load(system.file("extdata", "gage_01013500.rda", package = "hyAggregate"))
+2. flowline/catchment **topologies**
 
-# -- Run the Aggregation -- #
-aggregated = aggregate_by_thresholds(fl = gage_01013500$flowpaths,
-                                     catchments = gage_01013500$catchments,
-                                     ideal_size = 10,
-                                     min_area_sqkm = 3,
-                                     min_length_km = 1)
+3. **Attributes** to support routing and runoff modeling
+
+4. The **software** and **data models** to make the creation of these open, reproducible, and flexible.
+
+In this breakdown, features _define_ the computational elements for hydrology and hydraulic modeling; topologies _link_ data together for space/time processing 
+(modular elements that act as a whole); attributes _provide_ the information for model execution (physics based, conceptual and ML/AI model formulations); and software and data models _develop_ community standards, reproducibility, and flexibility to support analysis at scale.
+
+## Motivation
+
+`hyAggregate` is part of a larger family of projects and packages aiming to support federal (USGS/NOAA) water modeling efforts. The whole suite of development tools can be installed with:
+
+```r
+remotes::install_github("NOAA-OWP/hydrofabric")
 ```
 
-Here we can view a map of the modified flowpath and catchment network. Note that aggregating any network will result in lost resolution on the network when data conforms to the HY_Feature standand.
+Attaching this library, simular to the `tidyverse`, installs and loads a canon of software designed to manipulate, modify, describe, process, and quantify hydrologic networks and land surface attributes:
 
-```{r, echo = FALSE}
-{par(mfrow = c(1,2))
-  plot(st_geometry(gage_01013500$catchments), border = "red")
-  plot(st_geometry(aggregated$catchments), border = "blue", add = TRUE)
+```{r, eval = FALSE}
+library(hydrofabric)
+```
+
+| Repo        | Purpose           | 
+| ------------- |:-------------:| 
+| USGS-R/nhdplusTools      | Tools for for network manipulation | 
+| dblodgett-usgs/hyRefactor      | Tools for network refactoring | 
+| mikejohnson51/hyAggregate      | Tools for distribution based network aggregation and ngen file creation | 
+| mikejohnson51/opendap.catalog      | Tools for for accessing remote data resources for parameter and attributes estimation | 
+| mikejohnson51/zonal      | Tools for rapid catchment parameter summarization | 
+| JamesColl-NOAA/eHydRo      | Tools for accessing Army Corp bathymetry data and embedding it in a DEM/extracting cross sections| 
+
+
+## A National Reference Fabric
+
+`hyAggregate` relies on data products generated as part of the [Geospatial Fabric for National Hydrologic Modeling, version 2.0](https://www.sciencebase.gov/catalog/item/60be0e53d34e86b93891012b) project,  the general outline of which,  can be seen below:
+
+```{r, fig.cap = "Figure 1", echo = FALSE, out.width = "75%"}
+knitr::include_graphics("img/roadmap.png")
+```
+
+In the first row of Figure 1, there are three (3) **reference** products.
+
+  1.  An updated _network attributes_ table that provides attributes for the network features in the data model of NHDPlusV2, but with substantial improvements based on contributions from the USGS, NOAA OWP, NCAR and others.
   
-  plot(st_geometry(gage_01013500$flowpaths), col = "red")
-  plot(st_geometry(aggregated$flowpaths), col = "blue", add= TRUE, lwd = 2)
-}
-```
+  2.  A set of _reference catchment_ geometries in which geometric errors and artifacts in the NHDPlus CatchmentSP layer are corrected/removed.
+  
+  3.  A set of _reference flowline_ geometries where headwater flowlines have been replaced with the NHDPlus Burn lines
+  
+The CONUS reference files for these datasets can be downloaded here respectively ([attributes](https://www.sciencebase.gov/catalog/item/60c92503d34e86b9389df1c9), [catchments](https://www.sciencebase.gov/catalog/file/get/61295190d34e40dd9c06bcd7?f=__disk__8b%2F4d%2Fe8%2F8b4de8b52d2d0b24a4b0ea40f17e6cd7cbb0a504), [flowpaths](https://sciencebase.usgs.gov/manager/item/61295190d34e40dd9c06bcd7/file/cl39kyiq2007y0vo1fdke9stf))
+  
+## A National Refactored Fabric
 
-Equally we can ensure that our criteria was met by evaluating the catchment area and flowpath lengths across outputs:
+In the second row of Figure 1, the reference products are **refactored** based on a minimum flowpath criterion. This process is facilitated by the [`hyRefactor`](https://github.com/dblodgett-usgs/hyRefactor)^[Blodgett, D., Johnson, J.M., 2022, hyRefactor: Tools for Manipulating the NHDPlus Network in Preparation for Hydrologic Modeling]  R package. The concept of refactoring includes (1) Splitting large or long catchments in the reference data to create a more uniform catchment size distribution and (2) collapsing catchment topology by removing very small inter confluence, merge very small headwaters. The goal of refactoring is to **NOT** reduce the fidelity of the network, but instead to move the network to a more uniform/coherent version of the network.
 
-```{r, echo = FALSE, eval = FALSE}
-{par(mfrow = c(2,2))
-hist(gage_01013500$catchments$areasqkm, 
-     breaks = 100, 
-     main = paste(nrow(gage_01013500$catchments), "Refactored Catchment Areas"),
-     xlab = "SqKM")
-abline(v = 3, lwd = 4)
-abline(v = 10, lwd = 4)
-abline(v = 15, lwd = 4)
-
-hist(aggregated$catchments$areasqkm, 
-     breaks = 100, main = paste(nrow(aggregated$catchments), "Aggregated Catchment Areas"),
-     xlab = "SqKM")
-abline(v = 3, lwd = 4)
-abline(v = 10, lwd = 4)
-abline(v = 15, lwd = 4)
-
-hist(gage_01013500$flowpaths$LENGTHKM, 
-     breaks = 100, main = paste(nrow(gage_01013500$flowpaths), "Refactored Flowpath Lengths"),
-     xlab = "KM")
-abline(v = 1, lwd = 4)
-hist(aggregated$flowpaths$lengthkm, 
-     breaks = 100, main = paste(nrow(aggregated$flowpaths), "Aggregated Flowpath Lengths"),
-     xlab = "KM")
-abline(v = 1, lwd = 4)
-}
-```
+Refactoring is a parameter-based workflow, the selection of these parameters _does_ impact the resulting network, for the National Scale fabric
 
 
-```{r, echo = FALSE}
-library(ggplot2)
-library(patchwork)
+| Parameter        | Purpose           | Elected Value  | 
+| ------------- |:-------------:| -----:| 
+| split_flines_meters      | the maximum length flowpath desired in the output. | 10,000|
+| collapse_flines_meters      | the minimum length of inter-confluence flowpath desired in the output. | 1,000 |
+| collapse_flines_main_meters      | the minimum length of between-confluence flowpaths.| 1,000 |
 
-rfc_ln = ggplot(data = gage_01013500$flowpaths, aes(x = LENGTHKM)) +
-  geom_histogram(bins= 100, fill="#69b3a2", color="#e9ecef", alpha=0.9)+
-  geom_vline(xintercept = 1, lwd = 1) +
-  labs(x = "Length (KM)", title = paste0("Refactored Flowlines (",nrow(gage_01013500$flowpaths), ")"))
+The refactored output is shared under the Refactored Parent item of the above ScienceBase resource (available [here](https://www.sciencebase.gov/catalog/item/61fbfdced34e622189cb1b0a))
 
-agg_ln = ggplot(data = aggregated$flowpaths, aes(x = lengthkm)) +
-  geom_histogram(bins= 100, fill="#69b3a2", color="#e9ecef", alpha=0.9)+
-  geom_vline(xintercept = 1, lwd = 1) +
-  labs(x = "Length (KM)", title = paste0("Aggregated Flowlines (", nrow(aggregated$flowpaths), ")"))
 
-#####
+<br>
+<br>
+::: {#hello .blackbox .left}
+**NOTE:**
 
-rfc_ar = ggplot(data = gage_01013500$catchments, aes(x = areasqkm)) +
-  geom_histogram(bins= 100, fill="#404080", color="#e9ecef", alpha=0.9)+
-  geom_vline(xintercept = 3, lwd = 1) +
-  geom_vline(xintercept = 10, lwd = 1) +
-  geom_vline(xintercept = 20, lwd = 1) +
-  xlim(0,30) +
-  labs(x = "Area (KM2)", title = paste0("Refactored Catchments (", nrow(gage_01013500$catchments), ")"))
+There is a difference between the use of **flowline** and **flowpath**. Per the <a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html">hy_features standard</a>, a catchment can have one primary <a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_flowpath_also_flow_path">flowpath</a> (1:1) but multiple <a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_flow_line_also_flowline">flowlines</a> (1:many). 
 
-agg_ar = ggplot(data = aggregated$catchments, aes(x = areasqkm)) +
-  geom_histogram(bins= 100, fill="#404080", color="#e9ecef", alpha=0.9)+
-  geom_vline(xintercept = 3, lwd = 1) +
-  geom_vline(xintercept = 10, lwd = 1) +
-  geom_vline(xintercept = 20, lwd = 1) +
-  xlim(0,30) +
-  labs(x = "Area (KM2)", title = paste0("Aggregated Catchments (", nrow(aggregated$catchments), ")"))
+There is also a difference in the concept of a <a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_catchment">catchment</a>, which is the holistic unit of hydrology, and a <a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_catchment_divide"> catchment divide</a> which is the edge bounded by an inflown and outflow node
 
-rfc_ln + agg_ln +  rfc_ar + agg_ar
-```
+For the development of the reference fabric and modeling task outputs, we seek to define a set of divides and corresponding flowpaths from the reference flowlines and cathcments.
+:::
+<br>
+<br>
 
-## Nexus Locations
+## Getting Reference & Refactored Data
+
+All reference, refactored and ngen hydrofabric archives live on ScienceBase. They can be accessed with the web interface or can be downlaoded programatically.
+
+The `hyAggregate::get_reference_fabric()` utility will download the most current geofabric for a Vector Processing Unit (VPU). Options include downloading the "refactored" (deafult) or "reference" data. If the requested file already exists the file path will be returned. Here we can find the local path to the reference fabric for VPU=01 in the `./data` directory, and explore the layers contained within:
 
 ```{r}
-nex = get_nexus_locations(aggregated$flowpaths, term_cut = 1000000)
+VPU = "01"
+file = get_reference_fabric(VPU = VPU, dir = "data")
+st_layers(file)
+```
 
-{
-  plot(st_geometry(aggregated$catchments), border = "gray")
-  plot(st_geometry(gage_01013500$flowpaths), col = "blue", add = TRUE)
-  plot(st_geometry(nex), col = "red", pch = 16, cex = .5, add = TRUE)
-}
+Within the refactored fabric artifacts - the `nhd_flowline` and `nhd_catchment` layers are those associated with the reference data (row 1 in figure 1). (NOTE: These will soon be renamed to `reference_flowlines` and `reference_catchments` per this [issue](https://code.usgs.gov/wma/nhgf/gfv2.0/-/issues/76))
+
+The `reconciled` and `divides` layers are the output of the re factoring process (row 2 in figure 1). The remaining layers are those central to the `USGS gfv2.0` modeling task (row 3 in figure 1). (NOTE: These will soon be renamed to `refactored_flowpaths` and `refactored_divides` per this [issue](https://code.usgs.gov/wma/nhgf/gfv2.0/-/issues/76))
+
+`hyAggregate` houses the workflow(s) for generating the needed output for the `NOAA NextGen` modeling task, that starts from the `reconciled` and `divides` layers.
+
+# NOAA NextGen Modeling Task
+
+The NOAA Next Generation Water Resource Modeling Framework (Nextgen) is a specifiec modeling task. It operates under the assumption that there is no "one model to rule them all" and that different model **formulations** (e.g. topmodel, wrf-hydro, LSTM) will work better in different locations. Formulations are then **modules** that can execute at the scale of the catchment.
+
+
+```{r, echo = FALSE, out.width="75%"}
+knitr::include_graphics("img/right-tool-right-place.png")
+```
+
+Because of this, there is an interest in trying to align the **scale** of the catchment artifacts to the **scale** of the hydrologic processes being simulated. The scale identified for this initial run is the 3 - 15 square kilometers, with an ideal size of 10 sqkm.
+
+As seen below, this is _not_ even close to the area/length distributions found in either the reference or refactored artifacts.
+
+```{r, echo = FALSE, warning=FALSE, message = FALSE}
+library(dplyr)
+library(ggplot2)
+
+reference = read_sf(file, "nhd_flowline") |> 
+  st_drop_geometry() |> 
+  select(areasqkm = AreaSqKM, lengthkm = LENGTHKM)
+
+refactored_length = read_sf(file, "reconciled") |> 
+  st_drop_geometry() |> 
+  select(ID, lengthkm = LENGTHKM)
+
+refactored = read_sf(file, "divides") |> 
+  st_drop_geometry() |> 
+  select(ID, areasqkm) |> 
+  left_join(refactored_length, by = 'ID')
+
+ggplot() + 
+  geom_density(data = reference, aes(x = areasqkm), color="#69b3a2", size = 2) + 
+  geom_density(data = refactored, aes(x = areasqkm), color= "#404080", size = 2) + 
+  xlim(0,25) +
+  ylim(0,.6) +
+  geom_vline(xintercept = 3) + 
+  geom_vline(xintercept = 10, size = 1) + 
+  geom_vline(xintercept = 15) + 
+  theme_light() + 
+  labs(x = expression("Area (km²)"),  title = "Area Distribution", 
+       subtitle = paste0(sum(reference$areasqkm >= 25), ' catchments removed from reference (>25 km²)\n',
+                         sum(refactored$areasqkm >= 25), ' divides removed from refactored (>25 km²)')) +
+  annotate("rect", xmin = 3, xmax = 15, ymin = 0, ymax = .6,  alpha = .1) + 
+  scale_y_continuous("Density", expand = c(0,0)) + 
+  geom_label( aes(x=10, y=0.5, label= "Idealized Range"), color="black") +
+  geom_label( aes(x=4, y=0.4, label=paste(nrow(reference), "\nreference catchments")), color="#69b3a2", fill = "white") +
+  geom_label( aes(x=6.5, y=0.2, label= paste(nrow(refactored), "\nrefactored divides")), color="#404080") 
+
+###
+
+ggplot() + 
+  geom_density(data = reference, aes(x = lengthkm), color="#69b3a2", size = 2) + 
+  geom_density(data = refactored, aes(x = lengthkm), color= "#404080", size = 2) + 
+  xlim(0,10) +
+  ylim(0,.75) +
+  geom_vline(xintercept = 1, size = 1) + 
+  theme_light() + 
+  labs(x = "Length (km)", y = "Density",  title = "Length Distribution", 
+       subtitle = paste0(sum(reference$lengthkm >= 10), ' flowlines from reference (>10 km)\n',
+                         sum(refactored$lengthkm >= 10), ' flowpaths removed from reference (>10 km)')) +
+  geom_label( aes(x=1, y=0.75, label= "Minimum Length"), color="black") +
+  geom_label( aes(x=2, y=0.5, label=paste(nrow(reference), "\nreference flowlines")), color="#69b3a2", fill = "white") +
+  geom_label( aes(x=5, y=0.2, label= paste(nrow(refactored), "\nrefactored flowpaths")), color="#404080")
+
+```
+
+
+## Process
+
+To overcome the mismatched scale in the reference/reference fabric and the Ngen modelling task, we need to aggregate the catchments to a defined user threshold/distribution. Therefore, nextgen is a **distribution based modeling task** that seeks to align the scale of process to scale of catchment representation. 
+
+`hyAggregate` allows users to prescribe an **ideal catchment size**, a **minimum catchment area**, and a **minimum flowpath length**. The default parameters used for Nextgen are an ideal catchment size of 10 km², a minimum catchment size of 3 km², and a minimum flowpath length of 1 km. A `refactored_fabric` can be aggregated to this distribution using `hyAggregate`:
+
+
+```{r, eval = TRUE}
+ngen_v1 =  aggregate_network_to_distribution(get_reference_fabric(VPU = VPU, dir = "data"),
+                             outfile = glue("data/01_ngen_{VPU}.gpkg"), 
+                             nexus_topology = FALSE) 
+
+st_layers(ngen_v1)
+```
+
+The outputs of the base `hyAggregate` function create a geopackage with a set of catchment and flowpath features. Below we see the desired distribution has been enforced on the resulting hydrofabric. A more complete discussion of what happens within the aggregation can be found [here]().
+
+
+```{r, echo = FALSE, warning=FALSE, message = FALSE}
+agg = read_sf(ngen_v1, "aggregate_flowpaths") |> 
+  st_drop_geometry() |> 
+  select(areasqkm, lengthkm)
+
+
+ggplot() + 
+  geom_density(data = reference, aes(x = areasqkm), color="#69b3a2", size = 2) + 
+  geom_density(data = refactored, aes(x = areasqkm), color= "#404080", size = 2) + 
+  geom_density(data = agg, aes(x = areasqkm), color= "red", size = 2) + 
+  xlim(0,25) +
+  ylim(0,.6) +
+  geom_vline(xintercept = 3) + 
+  geom_vline(xintercept = 10, size = 1) + 
+  geom_vline(xintercept = 15) + 
+  theme_light() + 
+  labs(x = expression("Area (km²)"),  title = "Area Distribution", 
+       subtitle = paste0(sum(reference$areasqkm >= 25), ' removed from reference (>25 km²)\n',
+                         sum(refactored$areasqkm >= 25), ' removed from refactored (>25 km²)\n',
+                         sum(agg$areasqkm >= 25), ' removed from ngen (>25 km²)\n')) + 
+  annotate("rect", xmin = 3, xmax = 15, ymin = 0, ymax = .6,  alpha = .1) + 
+  scale_y_continuous("Density", expand = c(0,0)) + 
+  geom_label( aes(x=10, y=0.5, label= "Idealized Range"), color="black") +
+  geom_label( aes(x=4, y=0.4, label=paste(nrow(reference), "\nreference catchments")), color="#69b3a2", fill = "white") +
+  geom_label( aes(x=6.5, y=0.2, label= paste(nrow(refactored), "\nrefactored divides")), color="#404080") +
+  geom_label( aes(x=15, y=0.1, label= paste(nrow(agg), "\nngen divides")), color="red") 
+
+
+ggplot() + 
+  geom_density(data = reference, aes(x = lengthkm), color="#69b3a2", size = 2) + 
+  geom_density(data = refactored, aes(x = lengthkm), color= "#404080", size = 2) + 
+  geom_density(data = agg, aes(x = lengthkm), color= "red", size = 2) +
+  xlim(0,10) +
+  ylim(0,.75) +
+  geom_vline(xintercept = 1, size = 1) + 
+  theme_light() + 
+  labs(x = expression("Length (km)"),  title = "Length Distribution", 
+       subtitle = paste0(sum(reference$lengthkm >= 10), ' removed from reference (>10 km)\n',
+                         sum(reference$lengthkm >= 10), ' removed from refactored (>10 km)')) +
+  geom_label( aes(x=1, y=0.75, label= "Minimum Length"), color="black") +
+  geom_label( aes(x=2, y=0.6, label=paste(nrow(reference), "\nreference flowlines")), color="#69b3a2", fill = "white") +
+  geom_label( aes(x=4, y=0.35, label= paste(nrow(refactored), "\nrefactored flowpaths")), color="#404080") +
+  geom_label( aes(x=6, y=0.2, label= paste(nrow(agg), "\nngen flowpaths")), color="red")
+
+```
+
+## Topology
+
+The flowpath/divides produced in the aggreagation provide the features that discritize the landscape and river network into the comuptational elements that will be used. The next construct is that we need a description of how these features are connected and which 
+
+To date, the NHDPlus topology (and many other flow network models) rely on flowpath-to-flowpath connectivity that describes the network in terms of how flowpaths connect to other flowpaths (therefore, which divides connect to other divides). The reference _and_ refactored products retain this 'flowline-to-flowline' connectivity as does the ngen_aggregation when `nexus_topology=FALSE`.
+
+```{r}
+topology = read_sf(ngen_v1, 'aggregate_flowpaths') |> 
+  st_drop_geometry() |> 
+  select(id, toid)
+
+head(topology)
+```
+
+```{r, echo = FALSE}
+# Get the first id/toid relation:
+example = read_sf(ngen_v1, 'aggregate_flowpaths') |> 
+  filter(id %in% topology[1,])
+
+agg_cat = read_sf(ngen_v1, "aggregate_catchments") |> 
+  filter(id %in% topology[1,])
+
+ggplot(data = example, aes(color = as.factor(id))) +
+   geom_sf(size = 4) + 
+   labs(title = "Row 1 of the Topology Table:",
+        subtitle  = glue("Flowpath {topology$id} flows to Flowpath {topology$toid}"),
+        color = "ID") + 
+  theme_light() + 
+  theme(legend.position = "bottom")
+```
+
+**Nextgen** is moving away from 'flowline-to-flowline' model towards 'area-to-point' model. Here the idea of 'area' is wrapped up into the holistic idea of a Hy_feature catchment and 'point' is captured by the conceptual idea of a hydro nexus.
+
+
+::: {#hello .blackbox .left}
+**<a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_catchment">hydro(-logic) Cathchment</a>:**
+
+A physiographic unit where hydrologic processes take place. This class denotes a physiographic unit, which is defined by a hydrologically determined outlet to which all waters flow. While a catchment exists, it may or may not be clearly identified for repeated study. This approach considers the catchment concept to be the basic unit of study in hydrology, water resources management, and environmental reporting. The approach is meant to be holistic, referring to the continuous interaction of surface and subsurface waters within a catchment, even if a particular representation of the catchment refers to only surface or subsurface aspects of the catchment. 
+
+**<a href="https://docs.opengeospatial.org/is/14-111r6/14-111r6.html#_hydro_logic_nexus">hydro(-logic) nexus</a>:**
+
+Conceptual outlet for water contained by a catchment. The hydro nexus concept represents the place where a catchment interacts with another catchment. Every catchment flows to a hydro nexus, conversely every location in a hydrologic system can be thought of as a hydro nexus that drains some catchment. Similar to catchments, hydro nexuses can be realized in several hydrology-specific ways.
+
+If a given hydro nexus does not have a known hydrology-specific realization or is undetermined, it is termed 'nillable' in this standard. For example, a hydro nexus exists in the form of flow to the subsurface or atmosphere but may be undetermined and unrepresented within implementations focused on surface water hydrology and would not be included or referenced.
+:::
+<br>
+<br>
+
+We are doing this to be more compliant with the HY_Features conceptual model for representing surface water components and to ultimately help develop the community _data model_ needed for implementing the hy_feature concepts. This type of flow model was needed due to the scale of aggregation Nextgen requires, and the 
+
+
+The long term advantage of this approach is the ability to use multi-scale networks, leverage community efforts in hydrologic addressing and representation, and to have a more defined computational element for Nextgen comparability.
+
+In practice, this yields a scenario like below, where catchments may not flow to the coincident catchment but sometimes to the _downstream_ nexus. This is highlighted where 'cat-4' not longer flows to 'cat-3' but instead to 'nex-2'. At the same time, 'cat-3' is _also_ flowing to 'nex-2' suggesting two areas (holistic cathcments) are flowing to one point (a hydro nexus).
+
+<br>
+<br>
+```{r, echo = FALSE, out.width="50%"}
+knitr::include_graphics("img/nexus-topology-example.png")
+```
+<br>
+<br>
+
+To generate the 'nexus_topology' (opposed to flowline) we can set the `nexus_topology=TRUE` and rerun the aggregation code.
+
+
+```{r, eval = TRUE}
+ngen_v2 = aggregate_network_to_distribution(
+        gf = get_reference_fabric(VPU = VPU, dir = "data"),
+        outfile        = glue("data/02_ngen_{VPU}.gpkg"),
+        nexus_topology = TRUE) 
+
+st_layers(ngen_v2)
+```
+
+Well see that this option produces a non-spatial "flowpath_edge_list" within the geopackage. Opening this table highlights the area to point topology where the area (holistic catchment) is _realized_ as the waterbody ('wb-') of the flowpath. 
+
+```{r}
+head(read_sf(ngen_v2, 'flowpath_edge_list'))
+```
+
+The choice to use the waterbody realization, is tied to the need for network topology to support hyrdologic and hydraulic routing.
+
+## Routing Attributes 
+
+The core of the Nextgen modeling system uses [t-route](https://github.com/NOAA-OWP/t-route) for hydrologic and hydraulic routing. `t-route`  was designed to support the existing NWM and as such relies on routing parameters defined in the NWM Routelink file. 
+
+The `get_routelink_path()` function will search your `hyAggregate` R directory for a fst representation of the most current routelink file. If this file does not exist, then the code will (1) Check for the latest version of the nwm domain files on ncep. (2) Download the NetCDF file (3) extract it into a [fst](https://www.fstpackage.org) file shown below, and (4) save it to the specificed directory.
+
+```{r, warning = FALSE, message = FALSE}
+path = get_routelink_path()
+fst::metadata_fst(path)
+```
+
+By specifying a `routelink_path`, `aggregate_network_to_distribution` knows to develop length-averaged routelink parameter and associations (gages and NHDWaterbodies). The length averaging is done by determining the proportion of each _reference_ flowline (COMID) that falls within each aggregated catchment. The associated values are then weighted by the relative length:
+
+```{r, eval = TRUE}
+ngen_v3 =  aggregate_network_to_distribution(
+        get_reference_fabric(VPU = VPU, dir = "data"),
+        outfile        = glue("data/03_ngen_{VPU}.gpkg"),
+        nexus_topology = TRUE,
+        routelink_path = get_routelink_path())
+
+st_layers(ngen_v3)
+
+head(read_sf(ngen_v3, 'flowpath_attributes'))
+```
+
+## Hydrologic Model Attributes
+
+While routing parameters and topologies are critical for modeling the flow of water, `runoff` formulations are critcal for simulating how much water will be in the channel.
+
+The capacity for Ngen to encapsulate the idea of a catchment and implement a suite of different model formulations requires that critical attribute information is available to inform the wide range of models.
+
+Since ngen runs runoff models at the catchment scale, and not at the gridded scale (at least as of now), there is a need to summarize gridded information to the catchment scale in a fast, flexable, and performant way.
+
+This requires the ability to identify the quickly and accurately summarizes raster values over polygonal areas including paritially covered grid cells. Once the divide/raster cell relationships are established, we must define the way in which those values are summarized (collapsed). For example, do we want the "max tempeture per catchment" or the "mean temperture be catchment"?
+
+For the initial Ngen modules (cfe and NOAH-OWP-modular) the following variables from the NWM gridded data are summarized using the following functions:
+
+
+| Tables        | Description           | Layer(s)  | Summary Function | Source | 
+| ------------- |:-------------:| -----:| -----:|
+| bexp      | Beta Parameter| 4 | mode | soilproperties_CONUS_FullRouting.nc |
+| IVGTYP      | Dominant category    | 1   | mode | wrfinput_CONUS.nc |
+| ISLTYP | Dominant category      |  1   | mode | wrfinput_CONUS.nc |
+| dksat      | Saturated Soil Connectivity | 4  | geometric mean | soilproperties_CONUS_FullRouting.nc |
+| psisat      | Saturated soil matric potential      | 4   | geometric mean | soilproperties_CONUS_FullRouting.nc |
+| slope | Slope Index      |   1 | mean | soilproperties_CONUS_FullRouting.nc |
+| smcmax      | Saturated value of soil moisture [volumetric] | 4 | mean | soilproperties_CONUS_FullRouting.nc |
+| smcwlt      | Wilting point soil moisture [volumetric]     |  4  | mean | soilproperties_CONUS_FullRouting.nc |
+| refkdt | Parameter in the surface runoff parameterization      |  1  | mean | soilproperties_CONUS_FullRouting.nc |
+| cwpvt      | Empirical canopy wind parameter | 1 | mean | soilproperties_CONUS_FullRouting.nc |
+| vcmx25      | Maximum rate of carboxylation at 25 C [ umol CO2/m2/s]      | 1  | mean | soilproperties_CONUS_FullRouting.nc |
+| mp | Slope of Conductance to photosynthesis relationship      | 1   | mean | soilproperties_CONUS_FullRouting.nc |
+| mfsno      | Snowmelt m parameter | 1 | mean | soilproperties_CONUS_FullRouting.nc |
+| Coef      | Coefficient | 1 | mean | GWBUCKPARM_CONUS_FullRouting.nc |
+| Zmax      | Zmax | 1 | mean | GWBUCKPARM_CONUS_FullRouting.nc |
+| Expon      | Exponenet | 1 | mode | GWBUCKPARM_CONUS_FullRouting.nc |
+ 
+
+For convenience, these layers have been combined and stored as a single NetCDF on [ScienceBase](https://www.sciencebase.gov/catalog/item/629a4246d34ec53d276f446d). The get
+`get_nwm_grids` function in hyAggregate will either return a file.path if it exists is the provided directory; download the cached file from ScienceBase (if cache_download = TRUE); or, build it from the files available on NCEP.
+
+This summarization is wrapped in the function `aggregate_cfe_noahowp`, but can be reworked using `zonal` if more variables, or different summary functions are desired:
+
+```{r, eval = TRUE}
+ngen_v4 = glue("data/04_ngen_{VPU}.gpkg")
+#file.copy(ngen_v3, ngen_v4)
+```
+
+```{r, eval  = FALSE}
+ngen_v4 = aggregate_cfe_noahowp(gpkg = ngen_v4, dir = 'data', add_to_gpkg = TRUE)
+```
+
+```{r, eval = TRUE}
+st_layers(ngen_v4)
+
+glimpse(read_sf(ngen_v4, 'cfe_noahowp_attributes'))
+
+tmp = left_join(read_sf(ngen_v4, "aggregate_catchments"), read_sf(ngen_v4, "cfe_noahowp_attributes"), by  = "id")
+
+ggplot() + 
+  geom_sf(data = tmp, aes(fill = gw_Zmax), color = NA) + 
+  scale_fill_viridis_c()
+
+```
+
+## Read a File
+
+It is worth highlighting that the geopackage is a critical file format for sharing this type of data because it is (1) self containing (2) compact and (3) language agnostic. 
+
+There are two broad paths to accessing the data. The first is a GDAL based approach (in R this is using sf, but in python finona or geopandas works well). 
+
+```{r}
+# Read Options
+pacman::p_load(sf, DBI, RSQLite, dplyr)
+
+### 1. GDAL/geopackage
+st_layers(ngen_v4)
+nex = read_sf(ngen_v4, "nexus")
+head(nex)
+```
+
+The second is as a SQLite database (in R, I am doing this with RSQLite/DBI/dplyr):
+
+```{r}
+### 2. SQLite/Database
+db <- dbConnect(SQLite(), ngen_v4)
+dbListTables(db)
+fpa = collect(tbl(db, "flowpath_attributes"))
+
+head(fpa)
+
+dbDisconnect(db)
+```
+
+## Writing Nextgen Output
+
+The geopackage serves as a consise, interoperaple and efficient format for distributing packaged data that is tabular and spatial. However it does not meet everyones need. In particular ngen operates using JSON/geoJSON files. Simulalry the ESRI family of toosl (e.g. ArcMap/ArcPro/ArcGIS Online) _cannot_ read geopackges.
+
+As such, we offer a final function that generated the ngen files, and optionally shapefiles, from a GPKG.
+
+```{r, eval = FALSE}
+write_ngen_dir(ngen_v4, export_shapefiles = TRUE)
+```
+
+This function creates a directory at the same level and named as the GPKG and outputs the following files:
+
+```{r}
+fs::dir_tree(glue("data/04_ngen_{VPU}"))
+```
+
+
+## Cross-walk
+
+If you have made it this far - thanks! A small detail you might notice is that in the data/ngen_01 dirctory created from the GPKG, there is a new file called `crosswalk-mapping.json`
+
+data disambiguation, main_id = mainstem identifier, gage = NWIS siteID, member_comids = NHDPlus (e.g. reference flowlines).
+
+```{r}
+library(jsonlite)
+cw = fromJSON('data/04_ngen_01/crosswalk-mapping.json')
+
+# File with gage!
+cw$`wb-16354`
+
+# Feature w/o gage
+cw$`wb-22117`
+```
+
+
+## Network Tracing
+
+So the last step here is a non-function-ized way to use these files in conjunction to subset the network based on the flowpaths that flow to a USGS gage.
+
+In the above code chunk, we saw that `wb-16354` was associated with `NWIS:01172010`. To find the network upstream of that gage, we can use the topology (edge list) and the determined identifier to 'sort' the netowrk. The returned results is a sorted set if IDs upstream of the porvided outlet. These IDs can then be used to extract the flowpath or divide network.
+
+```{r}
+library(nhdplusTools)
+
+system.time({
+  trace = get_sorted(read_sf(ngen_v4, 'flowpath_edge_list'), 
+                     split = TRUE, 
+                     outlets = 'wb-16354')
+  
+  flowpaths = filter(read_sf(ngen_v4,  'aggregate_flowpaths'), id %in% trace$id)
+})
+
+plot(st_geometry(flowpaths), main = paste(nrow(flowpaths), "flowpaths upstream of 'wb-16354'"))
+
 ```
