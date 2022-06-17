@@ -206,7 +206,7 @@ get_flowpath_data = function(fline,
   }
 
   if (!"slope" %in% names(fline)) {
-    fline = add_slope(fline)
+    fline = add_slope(flowpaths = fline)
   }
 
 
@@ -223,4 +223,5 @@ get_flowpath_data = function(fline,
     mutate(id = paste0(waterbody_prefix, .data$id)) %>%
     mutate(realized_catchment = gsub(waterbody_prefix, catchment_prefix, id)) %>%
     left_join(catchment_edge_list, by = c("realized_catchment" = "id"))
+
 }

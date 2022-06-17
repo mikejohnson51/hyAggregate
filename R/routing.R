@@ -160,7 +160,7 @@ add_length_map = function (flowpaths, length_table) {
     mutate(new = paste0(floor(as.numeric(.data$comid)), ".", gsub("0\\.", "", .data$perLength))) %>%
     group_by(.data$id) %>%
     summarize(lengthMap = paste(.data$new, collapse = ",")) %>%
-    right_join(fline, by = "id") %>%
+    right_join(flowpaths, by = "id") %>%
     st_as_sf() |>
     st_cast("MULTILINESTRING")
 }

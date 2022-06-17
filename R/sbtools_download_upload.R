@@ -53,13 +53,17 @@ get_reference_fabric = function(VPU = "01",
   if (file.exists(out2) & !overwrite) {
     return(out2)
   } else {
-    sbtools::item_file_download(
-      sb_id = basename(path),
-      names = find$name,
-      destinations = out,
-      overwrite_file = TRUE
-    )
+    tryCatch({
+      sbtools::item_file_download(
+        sb_id = basename(path),
+        names = find$name,
+        destinations = out,
+        overwrite_file = TRUE
+      )}, error = function(e){
+        message("need authentication... put this in a browser to download (or authenticate sbtools):\n\n", find$url)
+      })
   }
+
   if (.getExtension(out) == "zip") {
     unzip(out, exdir = dir)
     unlink(out)

@@ -26,7 +26,7 @@ write_geojson <- function(x, file) {
 #' @importFrom tidyr unnest_longer
 
 write_ngen_dir = function(gpkg,
-                          catchment_name = "aggregate_catchments",
+                          catchment_name = "aggregate_divides",
                           flowpath_name  = "aggregate_flowpaths",
                           export_shapefiles = FALSE){
 
@@ -136,11 +136,12 @@ write_shapefile_dir = function(gpkg, dir){
   dir.create(outpath, recursive = TRUE, showWarnings = FALSE)
   log_info("Writing shapefiles to: {outpath}")
 
+
   sf::gdal_utils(
     util = "vectortranslate",
     source = gpkg,
     destination = outpath, # output format must be specified for GDAL < 2.3
-    options = c("-f", "ESRI Shapefile")
+    options = c("-f", "ESRI Shapefile", "-overwrite")
 )
 }
 

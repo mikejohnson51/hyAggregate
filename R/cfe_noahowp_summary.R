@@ -47,8 +47,9 @@ correct_nwm_spatial = function(path, ...){
 
 aggregate_cfe_noahowp = function(gpkg = NULL,
                                  dir = NULL,
-                                 catchment_name = "aggregate_catchments",
+                                 catchment_name = "aggregate_divides",
                                  flowline_name  = "aggregate_flowpaths",
+                                 ID = "id",
                                  precision = 9,
                                  add_to_gpkg = TRUE) {
 
@@ -68,7 +69,7 @@ aggregate_cfe_noahowp = function(gpkg = NULL,
 
   log_info("Building weighting grid from ", terra::sources(data)[1])
 
-  nwm_w_1000m = zonal::weight_grid(data, cats,  ID = "id")
+  nwm_w_1000m = zonal::weight_grid(data, cats,  ID = ID)
 
   log_success("Done!")
   soils_exe = list()
@@ -79,10 +80,11 @@ aggregate_cfe_noahowp = function(gpkg = NULL,
   soil_mean_var = c("slope", "smcmax", "smcwlt", "refkdt", 'cwpvt', 'vcmx25', 'mp', 'mfsno')
 
   log_info("Getting mode: ", paste(soil_mode_var, collapse = ", "))
-  soils_exe[[1]] = execute_zonal(
+  soils_exe[[1]] = zonal::execute_zonal(
     data = data,
     w = nwm_w_1000m,
-    ID = "id",
+    ID = ID,
+    drop = ID,
     subds = grepl(paste0(soil_mode_var, collapse = "|"), names(data)),
     fun = "mode"
   )
@@ -92,9 +94,10 @@ aggregate_cfe_noahowp = function(gpkg = NULL,
   soils_exe[[2]] = execute_zonal(
     data = data,
     w = nwm_w_1000m,
-    ID = "id",
+    ID = ID,
+    drop = ID,
     subds = grepl(paste0(soil_gm_var, collapse = "|"), names(data)),
-    fun =zonal:::geometric_mean
+    fun = zonal:::geometric_mean
   )
 
   log_success("Done!")
@@ -102,14 +105,16 @@ aggregate_cfe_noahowp = function(gpkg = NULL,
   soils_exe[[3]] = execute_zonal(
     data = data,
     w = nwm_w_1000m,
-    ID = "id",
+    ID = ID,
+    drop = ID,
     subds = grepl(paste0(soil_mean_var, collapse = "|"), names(data)),
     fun = "mean"
   )
 
   log_success("Done!")
 
-  exe <- Reduce(function(...) merge(..., all = TRUE, by = 'id'), soils_exe)
+  exe <- cbind(soils_exe[[1]], soils_exe[[2]], soils_exe[[3]])
+  exe[[ID]] = cats[[ID]]
 
   ####
 
@@ -165,10 +170,10 @@ aggregate_cfe_noahowp = function(gpkg = NULL,
         summarize(Expon = getmode(floor(.data$Expon)))
     })
 
-    traits = left_join(gwparams_means, gwparams_mode, by = 'id') %>%
+    traits = left_join(gwparams_means, gwparams_mode, by = ID) %>%
       mutate(id = gsub("wb-", "cat-", .data$id)) %>%
       setNames(c('id', paste0('gw_', names(.)[-1]))) %>%
-      right_join(exe, by = 'id')
+      right_join(exe, by = ID)
   }
 
   names(traits) = gsub("_Time=1", "", names(traits))

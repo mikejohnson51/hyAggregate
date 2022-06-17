@@ -7,7 +7,7 @@
 aggregate_cfe_noahowp(
   gpkg = NULL,
   dir = NULL,
-  catchment_name = "aggregate_catchments",
+  catchment_name = "aggregate_divides",
   flowline_name = "aggregate_flowpaths",
   precision = 9,
   add_to_gpkg = TRUE

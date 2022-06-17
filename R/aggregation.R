@@ -128,19 +128,30 @@ aggregate_network_to_distribution = function(gf = NULL,
     }
 
     # Make sure needed layers exist
-    if (!all(c("reconciled", "divides") %in% sf::st_layers(gf)$name)) {
-      stop("Make sure you are using a refactored gf product!")
+    if (all(!all(c("reconciled", "divides") %in% sf::st_layers(gf)$name),
+        !all(c("refactored_flowpaths", "refactored_divides") %in% sf::st_layers(gf)$name))) {
+      stop("Make sure you are using a refactored product!")
     }
 
     # Read Data into R
-    flowpaths  <- st_transform(read_sf(gf, "reconciled"), 5070)
-    catchments <- st_set_crs(read_sf(gf, "divides"), 5070)
+    flowpaths  <- tryCatch({
+      st_transform(read_sf(gf, "refactored_flowpaths"), 5070)
+    }, error = function(e){
+      st_transform(read_sf(gf, "reconciled"), 5070)
+    })
+
+    catchments  <- tryCatch({
+      st_transform(read_sf(gf, "refactored_divides"), 5070)
+    }, error = function(e){
+      st_transform(read_sf(gf, "divides"), 5070)
+    })
 
     # Remove non-associated flowpaths and catchments
       #fl <- filter(fl, ID %in% catchments$ID)
       #catchments <- filter(catchments, ID %in% fl$ID)
     # Create a network list and check in DAG and connected
     network_list <- check_network_validity(flowpaths = flowpaths, cat = catchments)
+
   } else {
     # Create a network list and check if DAG and connected
     network_list <- check_network_validity(flowpaths = flowpaths, cat = catchments)
@@ -209,7 +220,7 @@ aggregate_network_to_distribution = function(gf = NULL,
   if (nexus_topology) {
 
     if (verbose) {
-      log_info("Applying hy_feature topology...")
+      log_info("Applying HY_feature topology...")
     }
 
     network_list$flowpaths =  assign_nex_ids(network_list$flowpaths) |>
@@ -229,7 +240,7 @@ aggregate_network_to_distribution = function(gf = NULL,
 
     network_list$catchments = get_catchment_data(network_list$catchments, network_list$catchment_edge_list)
 
-    network_list$flowpaths  = get_flowpath_data(network_list$flowpaths,   network_list$catchment_edge_list)
+    network_list$flowpaths  = get_flowpath_data(fline = network_list$flowpaths, catchment_edge_list = network_list$catchment_edge_list)
 
     if(!is.null(routelink_path)){
       if (verbose) {
@@ -254,7 +265,7 @@ aggregate_network_to_distribution = function(gf = NULL,
     }
 
     write_sf(network_list$flowpaths,  outfile, "aggregate_flowpaths")
-    write_sf(network_list$catchments, outfile, "aggregate_catchments")
+    write_sf(network_list$catchments, outfile, "aggregate_divides")
 
     if (!is.null(network_list$nex)) {
       write_sf(network_list$nex, outfile, "nexus")
