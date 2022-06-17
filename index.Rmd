@@ -1,7 +1,7 @@
 ---
 title: NextGen Hydrofabric  
 subtitle: What is it and how do we get there?
-author: Mike Johnson^[Lynker, jjohnson@lynker.com]
+author: Mike Johnson^[Lynker, NOAA-Affiliate, mike.johnson@lynker.gov]
 output:
   html_document:
     css: hyAggregate.css
@@ -64,7 +64,7 @@ Equally important is the software tools to support flexibility and community upt
 
 Ngen aims to provide a framework in which heterogeneous models can be used to achieve the best possible results in the highest number of places. In the _framework_ the hydrofabric can is a malleable product that can be modified to support specific applications. However, the starting point for all variations of this product should stem from a consistent, quality _reference_ dataset. 
 
-The central role of a reference dataset cannot be understated as it not only allows people to avoid replication (and possible error) but also provides a source in which all variations of the data can be linked together. 
+The central role of a reference dataset cannot be overstated as it not only allows people to avoid replication (and possible error) but also provides a source in which all variations of the data can be linked together. 
 
 For example - while there might be specific hydrofabric traits needed for runoff modeling, hydraulic routing, and inundation mapping - if all of these groups built their own product from scratch, the ability to link them together to provide actionable information would take a a number of conflation processes that may or may not be easy, let alone feasible. 
 
@@ -82,7 +82,7 @@ So, can you build your own? For now all of these products are under heavy develo
 In either case, building or finding a Ngen ready hydrofabric requires the `hyAggregate` R package that can be installed from Github:
 
 ```r
-remotes::install_github("mikejohnson51/hyAggregate")
+remotes::install_github("NOAA-OWP/hyAggregate")
 ```
 
 The goal of `hyAggregate` is to find and/or develop _aggregated_ hydrologic and hydraulic networks to inform modeling tasks reliant on uniform length (flowpath) and area (catchment) distributions.
@@ -109,11 +109,9 @@ It includes the following:
 | ------------- |:-------------:| 
 | USGS-R/nhdplusTools      | Tools for for network manipulation | 
 | dblodgett-usgs/hyRefactor      | Tools for network refactoring | 
-| mikejohnson51/hyAggregate      | Tools for distribution based network aggregation and Ngen file creation | 
+| NOAA-OWP/hyAggregate      | Tools for distribution based network aggregation and Ngen file creation | 
 | mikejohnson51/opendap.catalog      | Tools for for accessing remote data resources for parameter and attributes estimation | 
-| mikejohnson51/zonal      | Tools for rapid catchment parameter summarization | 
-
-NOTE: `hyAggregate` and `zonal` will be moving over to the NOAA-OWP org soon as they are supported by the great team at OWP!
+| NOAA-OWP/zonal      | Tools for rapid catchment parameter summarization | 
 
 
 # A National Reference Fabric
@@ -677,4 +675,4 @@ plot(st_geometry(flowpaths), main = paste(nrow(flowpaths), "flowpaths upstream o
 
 # Questions
 
-The `hyAggregate` repo has a "help wanted" tag that can be applied to Issues. I am hopeful the communitee can engage there, ask questions, point out all the things that we have wrong (I likely own all the mistakes `r emo::ji("smile")`). Otherwise please email me at [jjohnson@lynker.com](jjohnson@lynker.com).
+The `hyAggregate` repo has a "help wanted" tag that can be applied to Issues. I am hopeful the communitee can engage there, ask questions, point out all the things that we have wrong (I likely own all the mistakes `r emo::ji("smile")`). Otherwise please email me at [mike.johnson@noaa.gov](mike.johnson@noaa.gov].
