@@ -1,6 +1,6 @@
 # Next Generation Water Resource Modeling Hydrofabrics 
 
-This is the repository is designed to build hydrofabric artifacts for the NOAA Nextgen framework.
+This repository is designed to build hydrofabric artifacts for the NOAA Nextgen framework.
 
 An introduction can be found [here](https://mikejohnson51.github.io/hyAggregate)
 

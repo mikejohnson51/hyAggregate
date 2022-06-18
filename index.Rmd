@@ -1,7 +1,7 @@
 ---
 title: NextGen Hydrofabric  
 subtitle: What is it and how do we get there?
-author: Mike Johnson^[Lynker, NOAA-Affiliate, mike.johnson@lynker.gov]
+author: Mike Johnson^[Lynker, NOAA-Affiliate, mike.johnson@noaa.gov]
 output:
   html_document:
     css: hyAggregate.css
@@ -20,6 +20,7 @@ output:
   out.width = "100%"
 )
 
+devtools::load_all('.')
 VPU = "01"
 library(sf)
 library(glue)
@@ -99,7 +100,7 @@ remotes::install_github("NOAA-OWP/hydrofabric")
 
 Attaching this library, similar to the `tidyverse`, installs and loads a canon of software designed to manipulate, modify, describe, process, and quantify hydrologic networks and land surface attributes:
 
-```{r, eval = TRUE, message=TRUE}
+```{r, eval = FALSE, message=TRUE}
 library(hydrofabric)
 ```
 
@@ -485,7 +486,7 @@ Since Ngen runs runoff models at the catchment scale, and not at the gridded sca
 
 This requires the ability to identify and  then quickly and accurately summarizes raster values over polygonal areas including partially covered grid cells. Once the divide/raster cell relationships are established, we must define the way in which those values are summarized (collapsed). For example, do we want the "max temperature per catchment" or the "mean temperature per catchment"?
 
-For more information on how this is accomplished please see the [zonal package](https://github.com/mikejohnson51/zonal) which has produced the ability to summarize decades of data, for areas as large as the east coast, in minutes on a personal laptop (this package is included in the `hydrofabric` meta package).
+For more information on how this is accomplished please see the [zonal package](https://github.com/NOAA-OWP/zonal) which has produced the ability to summarize decades of data, for areas as large as the east coast, in minutes on a personal laptop (this package is included in the `hydrofabric` meta package).
 
 ----
 
