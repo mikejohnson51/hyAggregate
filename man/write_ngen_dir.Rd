@@ -6,7 +6,7 @@
 \usage{
 write_ngen_dir(
   gpkg,
-  catchment_name = "aggregate_catchments",
+  catchment_name = "aggregate_divides",
   flowpath_name = "aggregate_flowpaths",
   export_shapefiles = FALSE
 )

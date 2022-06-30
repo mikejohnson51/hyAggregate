@@ -89,56 +89,56 @@ add_areasqkm = function (x) { drop_units(set_units(st_area(x), "km2")) }
 #' @param index_table index table to aggregate with
 #' @return a list of catchments and flowpaths that have been validated
 #' @export
-#' @importFrom dplyr group_by mutate slice_max ungroup select left_join everything filter bind_rows rename
+#' @importFrom dplyr group_by mutate slice_max ungroup select left_join everything filter bind_rows rename `%>%`
 #' @importFrom sf st_as_sf
 #' @importFrom nhdplusTools rename_geometry get_sorted
 #'
 aggregate_sets = function(flowpaths, cat, index_table) {
 
-  set_topo = index_table |>
-    group_by(set) |>
-    mutate(member_comid  = paste(.data$member_comid, collapse = ",")) |>
-    slice_max(hydroseq) |>
-    ungroup() |>
-    select(set, id = toid, levelpathid, member_comid) |>
-    left_join(select(index_table, toset = set, id), by = "id") |>
+  set_topo = index_table %>%
+    group_by(set) %>%
+    mutate(member_comid  = paste(.data$member_comid, collapse = ",")) %>%
+    slice_max(hydroseq) %>%
+    ungroup() %>%
+    select(set, id = toid, levelpathid, member_comid) %>%
+    left_join(select(index_table, toset = set, id), by = "id") %>%
     select(-id)
 
-  single_flowpaths = filter(index_table, n == 1) |>
-    left_join(flowpaths, by = "id") |>
-    st_as_sf() |>
-    select(set) |>
+  single_flowpaths = filter(index_table, n == 1) %>%
+    left_join(flowpaths, by = "id") %>%
+    st_as_sf() %>%
+    select(set) %>%
     rename_geometry("geometry")
 
-  flowpaths_out  = filter(index_table, n > 1) |>
-    left_join(flowpaths, by = "id") |>
-    st_as_sf() |>
-    select(set) |>
-    geos_union_linestring_hyaggregate('set') |>
-    rename_geometry("geometry") |>
-    bind_rows(single_flowpaths) |>
-    select(set) |>
-    left_join(set_topo, by = "set") |>
-    rename(ID = set, toID = toset) |>
+  flowpaths_out  = filter(index_table, n > 1) %>%
+    left_join(flowpaths, by = "id") %>%
+    st_as_sf() %>%
+    select(set) %>%
+    geos_union_linestring_hyaggregate('set') %>%
+    rename_geometry("geometry") %>%
+    bind_rows(single_flowpaths) %>%
+    select(set) %>%
+    left_join(set_topo, by = "set") %>%
+    rename(ID = set, toID = toset) %>%
     flowpaths_to_linestrings()
   ####
 
-  single_catchments = filter(index_table, n == 1) |>
-    left_join(cat, by = "id") |>
-    st_as_sf() |>
-    select(set) |>
+  single_catchments = filter(index_table, n == 1) %>%
+    left_join(cat, by = "id") %>%
+    st_as_sf() %>%
+    select(set) %>%
     rename_geometry("geometry")
 
-  catchments_out  = filter(index_table, n != 1) |>
-    left_join(cat, by = "id") |>
-    st_as_sf() |>
+  catchments_out  = filter(index_table, n != 1) %>%
+    left_join(cat, by = "id") %>%
+    st_as_sf() %>%
     #TODO: this is dealing with disjoint levelpath catchments that are "merged". Creates a MULTIPOLYGON from
     # Multiple input polygons when needed
-    geos_union_polygon_hyaggregate('set') |>
-    rename_geometry("geometry") |>
-    bind_rows(single_catchments) |>
-    select(set) |>
-    left_join(set_topo, by = "set") |>
+    geos_union_polygon_hyaggregate('set') %>%
+    rename_geometry("geometry") %>%
+    bind_rows(single_catchments) %>%
+    select(set) %>%
+    left_join(set_topo, by = "set") %>%
     rename(ID = set, toID = toset) %>%
     filter(!sf::st_is_empty(.))
 
@@ -161,9 +161,9 @@ aggregate_sets = function(flowpaths, cat, index_table) {
 #' @importFrom sf st_as_sf
 
 geos_union_linestring_hyaggregate = function (lines, ID)  {
-  aggregate(vect(lines), by = eval(ID)) |>
-    st_as_sf() |>
-    select(!!ID) |>
+  aggregate(vect(lines), by = eval(ID)) %>%
+    st_as_sf() %>%
+    select(!!ID) %>%
     flowpaths_to_linestrings()
 }
 
@@ -178,9 +178,9 @@ geos_union_linestring_hyaggregate = function (lines, ID)  {
 #' @importFrom sf st_as_sf st_collection_extract st_geometry_type st_make_valid
 
 geos_union_polygon_hyaggregate = function(poly, ID) {
-  poly = aggregate(vect(poly), by = eval(ID)) |>
-    st_as_sf() |>
-    select(!!ID) |>
+  poly = aggregate(vect(poly), by = eval(ID)) %>%
+    st_as_sf() %>%
+    select(!!ID) %>%
     st_make_valid()
 
   if (any(grepl("COLLECTION",  st_geometry_type(poly)))) {
@@ -290,12 +290,12 @@ check_network_validity     <- function(flowpaths, cat, term_cut = 100000000, che
     flowpaths  = mutate(flowpaths, lengthkm = add_lengthkm(flowpaths))
 
     if(!is.null(cat)){
-      cat =  mutate(cat, areasqkm = add_areasqkm(cat))  |>
+      cat =  mutate(cat, areasqkm = add_areasqkm(cat))  %>%
         select(.data$id, .data$areasqkm)
 
       if('areasqkm' %in% names(flowpaths)){
         flowpaths = flowpaths %>%
-          select(-.data$areasqkm) |>
+          select(-.data$areasqkm) %>%
           left_join(st_drop_geometry(cat), by = "id")
       } else {
         flowpaths =  left_join(flowpaths, st_drop_geometry(cat), by = "id")
@@ -324,8 +324,8 @@ check_network_validity     <- function(flowpaths, cat, term_cut = 100000000, che
 #' @importFrom dplyr select
 
 network_is_dag = function(fl, ID = "id", toID = "toid"){
-  st_drop_geometry(select(fl, !!ID, !!toID)) |>
-    graph_from_data_frame(directed = TRUE) |>
+  st_drop_geometry(select(fl, !!ID, !!toID)) %>%
+    graph_from_data_frame(directed = TRUE) %>%
     is.dag()
 }
 

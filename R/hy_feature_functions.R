@@ -8,7 +8,7 @@
 #' @return data.frame
 #' @export
 #' @importFrom sf st_drop_geometry
-#' @importFrom dplyr select mutate left_join bind_rows
+#' @importFrom dplyr select mutate left_join bind_rows `%>%`
 
 get_catchment_edges_terms = function(flowpaths,
                                      nexus_prefix = "nex-",
@@ -44,12 +44,12 @@ get_catchment_edges_terms = function(flowpaths,
 
 assign_nex_ids = function(fline, term_cut = 1e9) {
 
-  term_node = filter(fline, toid == 0 | is.na(toid)) |>
+  term_node = filter(fline, toid == 0 | is.na(toid)) %>%
     mutate(toid = term_cut + 1:n())
 
   no_term = filter(fline, !id %in% term_node$id)
 
-  bind_rows(term_node, no_term) |>
+  bind_rows(term_node, no_term) %>%
     rename_geometry("geometry")
 
 }

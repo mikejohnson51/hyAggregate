@@ -73,10 +73,10 @@ get_routelink_path = function(dir = hyAggregate_data_dir(), build = TRUE){
       df2 = data.frame(do.call(cbind, lapply(c("link", "NHDWaterbodyComID", "gages"), function(x) var.get.nc(nc, x))))
       names(df2) = c("link", "NHDWaterbodyComID", "gages")
 
-      df  = df2 |>
-        mutate(link = as.numeric(link)) |>
-        right_join(df, by = "link")  |>
-        rename(comid = link) |>
+      df  = df2 %>%
+        mutate(link = as.numeric(link)) %>%
+        right_join(df, by = "link")  %>%
+        rename(comid = link) %>%
         mutate(gages = trimws(.data$gages),
                gages = ifelse(.data$gages == "", NA, .data$gages),
                 NHDWaterbodyComID = ifelse(NHDWaterbodyComID == -9999, NA, NHDWaterbodyComID),
@@ -150,7 +150,7 @@ add_length_map = function (flowpaths, length_table) {
     select(.data$id, .data$lengthm_id) %>%
     st_drop_geometry()
 
-  left_join(unnested2, lengthm_fp, "baseCOMID") |>
+  left_join(unnested2, lengthm_fp, "baseCOMID") %>%
     left_join(lengthm_id, by = "id") %>%
     mutate(perLength = round(.data$lengthm_id / .data$lengthm_fp, 3) / 10) %>%
     select(.data$id, .data$comid, .data$perLength) %>%
@@ -161,7 +161,7 @@ add_length_map = function (flowpaths, length_table) {
     group_by(.data$id) %>%
     summarize(lengthMap = paste(.data$new, collapse = ",")) %>%
     right_join(flowpaths, by = "id") %>%
-    st_as_sf() |>
+    st_as_sf() %>%
     st_cast("MULTILINESTRING")
 }
 
@@ -215,7 +215,7 @@ add_slope = function(flowpaths) {
 #' @export
 #' @importFrom nhdplusTools get_vaa
 #' @importFrom sf st_drop_geometry
-#' @importFrom dplyr select mutate rename right_join rename right_join across everything summarize %>% bind_cols
+#' @importFrom dplyr select mutate rename right_join rename right_join across everything summarize `%>%` bind_cols
 #' @importFrom stats weighted.mean
 #' @importFrom tidyr unnest
 #' @importFrom RNetCDF open.nc close.nc var.get.nc
@@ -228,9 +228,9 @@ length_average_routelink = function (flowpaths,
 
   flowpaths =  add_length_map(flowpaths, length_table = get_vaa("lengthkm"))
 
-  length_m_mapping = flowpaths |>
-    mutate(length_m = as.numeric(st_length(flowpaths))) |>
-    select(id, length_m) |>
+  length_m_mapping = flowpaths %>%
+    mutate(length_m = as.numeric(st_length(flowpaths))) %>%
+    select(id, length_m) %>%
     st_drop_geometry()
 
   if (!"Length" %in% rl_vars) { rl_vars = c("Length", rl_vars) }
@@ -261,7 +261,7 @@ length_average_routelink = function (flowpaths,
               NHDWaterbodyComID = paste(unique(.data$NHDWaterbodyComID[!is.na(.data$NHDWaterbodyComID)]), collapse = ",")) %>%
     left_join(df, by = "id") %>%
     mutate(gages = ifelse(.data$gages == "", NA, .data$gages),
-           NHDWaterbodyComID = ifelse(.data$NHDWaterbodyComID == "", NA, .data$NHDWaterbodyComID)) |>
+           NHDWaterbodyComID = ifelse(.data$NHDWaterbodyComID == "", NA, .data$NHDWaterbodyComID)) %>%
     mutate(gages = as.character(.data$gages),
            NHDWaterbodyComID = as.character(.data$NHDWaterbodyComID))
 

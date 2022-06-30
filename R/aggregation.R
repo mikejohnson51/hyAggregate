@@ -8,7 +8,7 @@
 #' @return list of sf objects
 #' @export
 #' @importFrom sf st_buffer st_intersects st_drop_geometry
-#' @importFrom dplyr group_by mutate filter arrange slice_head ungroup select left_join bind_rows
+#' @importFrom dplyr group_by mutate filter arrange slice_head ungroup select left_join bind_rows `%>%`
 #' @importFrom rmapshaper ms_explode
 #' @importFrom tidyr pivot_longer
 #' @importFrom nhdplusTools get_node
@@ -17,15 +17,15 @@ collapse_network_inward =  function(network_list,
                                     min_area_sqkm,
                                     min_length_km,
                                     verbose = TRUE) {
-  bad = network_list$flowpaths |>
-    group_by(levelpathid) |>
-    mutate(n = n()) |>
-    filter(areasqkm < min_area_sqkm | lengthkm < min_length_km) |>
-    flowpaths_to_linestrings() |>
+  bad = network_list$flowpaths %>%
+    group_by(levelpathid) %>%
+    mutate(n = n()) %>%
+    filter(areasqkm < min_area_sqkm | lengthkm < min_length_km) %>%
+    flowpaths_to_linestrings() %>%
     ms_explode()
 
   bad_outlets = bad %>%
-    mutate(geom = get_node(bad, "end")$geometry) |>
+    mutate(geom = get_node(bad, "end")$geometry) %>%
     st_buffer(1)
 
   emap = st_intersects(bad_outlets, network_list$flowpaths)
@@ -34,47 +34,47 @@ collapse_network_inward =  function(network_list,
     id       = rep(bad_outlets$id, times = lengths(emap)),
     touches  = network_list$flowpaths$id[unlist(emap)],
     toid     = rep(bad_outlets$toid, times = lengths(emap))
-  ) |>
-    filter(!.data$id == .data$touches) |>
-    group_by(id)  |>
-    mutate(match = touches == toid) |>
-    arrange(-match) |>
-    slice_head(n = 1) |>
-    ungroup() |>
-    mutate(match = NULL) |>
-    mutate(set = 1:n()) |>
-    select(id, DS_fl = touches) |>
+  ) %>%
+    filter(!.data$id == .data$touches) %>%
+    group_by(id)  %>%
+    mutate(match = touches == toid) %>%
+    arrange(-match) %>%
+    slice_head(n = 1) %>%
+    ungroup() %>%
+    mutate(match = NULL) %>%
+    mutate(set = 1:n()) %>%
+    select(id, DS_fl = touches) %>%
     filter(!is.na(DS_fl))
 
-  ggg = left_join(bad, tmp, by = "id") |>
+  ggg = left_join(bad, tmp, by = "id") %>%
     mutate(headwater = !(id %in% DS_fl |
-                           id %in% network_list$flowpaths$toid)) |>
+                           id %in% network_list$flowpaths$toid)) %>%
     filter(!is.na(DS_fl))
 
-  set_topo = filter(ggg, headwater) |>
-    st_drop_geometry() |>
-    select(id, DS_fl) |>
+  set_topo = filter(ggg, headwater) %>%
+    st_drop_geometry() %>%
+    select(id, DS_fl) %>%
     mutate(set = 1:n())
 
-  tmp_fl = network_list$flowpaths |>
+  tmp_fl = network_list$flowpaths %>%
     filter(!id %in% set_topo$id)
 
-  master = set_topo |>
-    mutate(to_lose = id) |>
-    mutate(new_id = DS_fl) |>
-    pivot_longer(-c(new_id, set)) |>
-    filter(name != "id") |>
+  master = set_topo %>%
+    mutate(to_lose = id) %>%
+    mutate(new_id = DS_fl) %>%
+    pivot_longer(-c(new_id, set)) %>%
+    filter(name != "id") %>%
     select(set, new_id, id = value)
 
 
-  retained = filter(network_list$catchments, !id %in% master$id) |>
+  retained = filter(network_list$catchments, !id %in% master$id) %>%
     rename_geometry("geometry")
 
-  lumped = filter(network_list$catchments, id %in% master$id) |>
-    left_join(master, by = "id") |>
-    geos_union_polygon_hyaggregate("new_id") |>
-    rename_geometry("geometry") |>
-    rename(id = new_id) |>
+  lumped = filter(network_list$catchments, id %in% master$id) %>%
+    left_join(master, by = "id") %>%
+    geos_union_polygon_hyaggregate("new_id") %>%
+    rename_geometry("geometry") %>%
+    rename(id = new_id) %>%
     bind_rows(retained)
 
 
@@ -223,7 +223,7 @@ aggregate_network_to_distribution = function(gf = NULL,
       log_info("Applying HY_feature topology...")
     }
 
-    network_list$flowpaths =  assign_nex_ids(network_list$flowpaths) |>
+    network_list$flowpaths =  assign_nex_ids(network_list$flowpaths) %>%
       flowpaths_to_linestrings()
 
     network_list$catchment_edge_list <- get_catchment_edges_terms(network_list$flowpaths)
@@ -354,7 +354,7 @@ aggregate_along_mainstems = function(network_list,
         lthres = min_length_km,
         athres = min_area_sqkm
       )
-    ) |>
+    ) %>%
     ungroup()   %>%
     group_by(.data$levelpathid, .data$ind) %>%
     mutate(set = cur_group_id(),

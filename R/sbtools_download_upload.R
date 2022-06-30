@@ -1,3 +1,15 @@
+#' Find Processing Unit (Vector or Raster)
+#' @param location sf object
+#' @param pu either "vpu" or "rpu" (default is "vpu")
+#' @return intersection processing units (sf object)
+#' @export
+#' @importFrom nhdplusTools get_boundaries
+#' @importFrom sf st_transform
+#' @importFrom dplyr filter slice_min
+#' @importFrom sbtools item_file_download
+
+find_pu = function(location, pu = "vpu"){ get_boundaries(pu)[st_transform(location, 4269),] }
+
 #' Extract File Extension
 #' @details returns file extension
 #' @param x a file path
