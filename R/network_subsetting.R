@@ -30,7 +30,7 @@ subset_network = function(gpkg, origin, mainstem = FALSE){
                      outlets = origin)
 
   flowpaths = filter(read_sf(gpkg,  'aggregate_flowpath'),  id %in% trace$id)
-  divides = filter(read_sf(gpkg,  'aggregate_catchment'), id %in% flowpaths$realized_catchment)
+  divides   = filter(read_sf(gpkg,  'aggregate_catchment'), id %in% flowpaths$realized_catchment)
 
   if(mainstem){
     tmp = filter(flowpaths, id == origin)
